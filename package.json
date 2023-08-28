@@ -1,0 +1,11 @@
+{
+  "name": "language-server-scripts",
+  "version": "1.0.0",
+  "description": "A collection of scripts that use language servers, and the package.json to make the client library available.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}

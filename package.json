@@ -3,13 +3,18 @@
   "version": "1.0.0",
   "description": "A collection of scripts that use language servers, and the package.json to make the client library available.",
   "main": "index.js",
+  "type:": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "monaco-languageclient": "^6.4.4",
+    "ts-node": "^10.9.1",
+    "vscode-jsonrpc": "^8.1.0",
     "zx": "^7.2.3"
+  },
+  "peerDependencies": {
+    "typescript-language-server": "^3.3.2"
   }
 }

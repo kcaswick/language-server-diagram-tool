@@ -1,0 +1,49 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Dependency directories
+node_modules
+
+# Build generated files
+dist
+lib
+release
+solution
+temp
+*.sppkg
+
+# Coverage directory used by tools like istanbul
+coverage
+
+# Husky auto-generated scripts
+.husky/_
+
+# OSX
+.DS_Store
+
+# Visual Studio files
+.ntvs_analysis.dat
+.vs
+bin
+obj
+
+# Resx Generated Code
+*.resx.ts
+
+# Styles Generated Code
+*.scss.ts
+*.scss.d.ts
+
+#Excluding Teams folder
+teams
+
+# Profiler output
+isolate-*-v8.log
+processed-*-v8.log
+*.0x/
+
+.bash_history
+
+# Auto/tool added get put below here

@@ -1,7 +1,10 @@
 {
   "name": "language-server-scripts",
   "version": "1.0.0",
-  "description": "A collection of scripts that use language servers, and the package.json to make the client library available.",
+  "description": "A collection of scripts that use language servers or LSIF (language server index format), and the package.json to make the client library available.",
+  "workspaces": [
+    "lsp"
+  ],
   "main": "index.js",
   "type:": "module",
   "scripts": {
@@ -11,10 +14,6 @@
   "license": "ISC",
   "dependencies": {
     "ts-node": "^10.9.1",
-    "vscode-jsonrpc": "^8.1.0",
     "zx": "^7.2.3"
-  },
-  "peerDependencies": {
-    "typescript-language-server": "^3.3.2"
   }
 }

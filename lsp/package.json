@@ -1,5 +1,5 @@
 {
-  "name": "language-server-scripts",
+  "name": "language-server-protocol-scripts",
   "version": "1.0.0",
   "description": "A collection of scripts that use language servers, and the package.json to make the client library available.",
   "main": "index.js",

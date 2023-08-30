@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "A collection of scripts that use LSIF (language server index format), and the package.json to make the libraries available.",
   "main": "index.js",
-  "type:": "module",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

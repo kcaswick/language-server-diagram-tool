@@ -1,11 +1,7 @@
 {
-  "name": "language-server-scripts",
+  "name": "lsif-scripts",
   "version": "1.0.0",
-  "description": "A collection of scripts that use language servers or LSIF (language server index format), and the package.json to make the libraries available.",
-  "workspaces": [
-    "lsif",
-    "lsp"
-  ],
+  "description": "A collection of scripts that use LSIF (language server index format), and the package.json to make the libraries available.",
   "main": "index.js",
   "type:": "module",
   "scripts": {

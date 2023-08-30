@@ -12,6 +12,7 @@
   "dependencies": {
     "ts-node": "^10.9.1",
     "vscode-jsonrpc": "^8.1.0",
+    "yargs": "^17.7.2",
     "zx": "^7.2.3"
   },
   "peerDependencies": {

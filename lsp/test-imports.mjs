@@ -3,9 +3,8 @@ import { initServices, MonacoLanguageClient } from "monaco-languageclient";
 await initServices({ debugLogging: true });
 
 const client = new MonacoLanguageClient({
-    name: "Test Language Client",
-    clientOptions: {
-    },
+  name: "Test Language Client",
+  clientOptions: {},
 });
 
 await client.start();

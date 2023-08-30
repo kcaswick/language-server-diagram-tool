@@ -9,12 +9,20 @@
   "main": "index.js",
   "type:": "module",
   "scripts": {
+    "prettify": "prettier --write .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "prettier": "^3.0.3",
     "ts-node": "^10.9.1",
     "zx": "^7.2.3"
+  },
+  "prettier": {
+    "endOfLine": "auto",
+    "printWidth": 100,
+    "tabWidth": 2,
+    "useTabs": false
   }
 }

@@ -6,13 +6,13 @@ let childProcess = cp.spawn(
   ["--stdio"] /* , {
     // env: process.env,
 //   shell: true,
-} */
+} */,
 );
 
 // Use stdin and stdout for communication:
 let connection = rpc.createMessageConnection(
   new rpc.StreamMessageReader(childProcess.stdout),
-  new rpc.StreamMessageWriter(childProcess.stdin)
+  new rpc.StreamMessageWriter(childProcess.stdin),
 );
 
 connection.trace(rpc.Trace.Verbose, console);
@@ -25,30 +25,26 @@ connection.sendNotification(notification, "Hello World");
 
 console.log(`Responses pending: ${connection.hasPendingResponse()}`);
 
-void async function () {
+void (async function () {
+  // Send JSON-RPC request to initialize language server
+  let request = new rpc.RequestType<object, object, object>("initialize");
 
-// Send JSON-RPC request to initialize language server
-let request = new rpc.RequestType<object, object, object>(
-  "initialize"
-);
+  let initParams = {
+    processId: process.pid,
+    rootPath: process.cwd(),
+    capabilities: {},
+    workspaceFolders: null,
+  };
 
-let initParams = {
-  processId: process.pid,
-  rootPath: process.cwd(),
-  capabilities: {},
-  workspaceFolders: null,
-};
+  const result = await connection.sendRequest(request, initParams);
 
-const result = await connection.sendRequest(request, initParams);
+  console.log(JSON.stringify(result, null, 2));
 
-console.log(JSON.stringify(result, null, 2));
+  // Send JSON-RPC notification to exit language server
+  let exitNotification = new rpc.NotificationType0("exit");
 
-// Send JSON-RPC notification to exit language server
-let exitNotification = new rpc.NotificationType0("exit");
-
-connection.sendNotification(exitNotification);
-
-}();
+  connection.sendNotification(exitNotification);
+})();
 
 console.log(`Responses pending: ${connection.hasPendingResponse()}`);
 

@@ -8,7 +8,7 @@
     "esModuleInterop": true,
 
     /* Bundler mode */
-    "moduleResolution": "bundler",
+    "moduleResolution": "Bundler",
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
@@ -20,5 +20,12 @@
     "noUnusedParameters": false,  // Enforce as eslint warning instead
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["."]
+  "include": ["."],
+  "ts-node": {
+    "compilerOptions": {
+      "moduleResolution": "Bundler",
+    },
+    "esm": true,
+    "experimentalSpecifierResolution": "node"
+  }
 }

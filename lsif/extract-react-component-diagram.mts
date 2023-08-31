@@ -1,12 +1,11 @@
 #!/usr/bin/env zx
 /* eslint-disable new-cap */
-import { AsFqn, ElementKind, ModelIndex, NonEmptyArray, Tag } from "@likec4/core";
+import { AsFqn, ModelIndex } from "@likec4/core";
+import type { Element as C4Element, ElementKind, Tag } from "@likec4/core";
 import {
   DefinitionRange,
   Edge,
   Element,
-  ElementTypes,
-  Id,
   ItemEdgeProperties,
   Moniker,
   Range,
@@ -23,6 +22,15 @@ import { A, M } from "ts-toolbelt";
 import yargs, { Arguments } from "yargs";
 import { hideBin } from "yargs/helpers";
 import { $, fs } from "zx";
+
+/**
+ * Adds a new element to the given LikeC4 model index.
+ * @param model - The model to add the element to.
+ * @param element - The element to add to the model.
+ */
+export const addElement = (model: ModelIndex, element: C4Element) => {
+  model.addElement(element);
+};
 
 export const readJsonl = async function* (
   path: fs.PathLike,
@@ -195,7 +203,7 @@ itemIndexOut[referenceResultId]?.references.forEach((referenceId) => {
     const tscMoniker = tscMonikers[0];
     console.debug("tscMoniker", tscMoniker);
 
-    model.addElement({
+    addElement(model, {
       description: "React component",
       links: null,
       kind: "widget" as ElementKind,
@@ -207,4 +215,4 @@ itemIndexOut[referenceResultId]?.references.forEach((referenceId) => {
   }
 });
 
-console.log(JSON.stringify(model, null, 2));
+console.log("model as JSON", JSON.stringify(model, null, 2));

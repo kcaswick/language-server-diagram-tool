@@ -215,4 +215,9 @@ itemIndexOut[referenceResultId]?.references.forEach((referenceId) => {
   }
 });
 
-console.log("model as JSON", JSON.stringify(model, null, 2));
+console.log("modelIndex as JSON", JSON.stringify(model, null, 2));
+
+console.log(
+  "elements and relations as JSON",
+  JSON.stringify({ elements: model.elements, relations: model.relations }, null, 2),
+);

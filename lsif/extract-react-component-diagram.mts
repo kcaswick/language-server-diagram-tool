@@ -1,4 +1,6 @@
 #!/usr/bin/env zx
+/* eslint-disable new-cap */
+import { AsFqn, ElementKind, ModelIndex, NonEmptyArray, Tag } from "@likec4/core";
 import {
   DefinitionRange,
   Edge,
@@ -33,15 +35,6 @@ export const readJsonl = async function* (
     yield (line ? JSON.parse(line) : null) as M.JSON.Value;
   }
 };
-
-// TODO: Use a real model class
-class ModelElement {}
-class ModelClass {
-  private _elements = new Map<Id, ModelElement>();
-  addElement(arg0: { kind: string; id: Id; title: string; tags: string[] }) {
-    this._elements.set(arg0.id, new ModelElement());
-  }
-}
 
 const argv = yargs(hideBin(process.argv))
   .command("$0 <input>", "Extract React component diagram from LSIF file", (yargs) =>
@@ -86,7 +79,7 @@ const componentTypeRanges: Record<string, Range> = {};
 const elements = [] as Element[];
 const itemIndexOut: Record<number, Record<ItemEdgeProperties | "undefined", number[]> | undefined> =
   {};
-const model = new ModelClass();
+const model = new ModelIndex();
 const monikerIndexIn: Record<number, number[]> = {};
 const monikerIndexOut: Record<number, number[]> = {};
 const nextIndexIn: Record<number, number[]> = {};
@@ -203,10 +196,15 @@ itemIndexOut[referenceResultId]?.references.forEach((referenceId) => {
     console.debug("tscMoniker", tscMoniker);
 
     model.addElement({
-      kind: "widget",
-      id: tscMoniker.id,
+      description: "React component",
+      links: null,
+      kind: "widget" as ElementKind,
+      id: AsFqn(tscMoniker.id.toString()),
+      technology: "react",
       title: tscMoniker.identifier,
-      tags: ["widget", "component", "react"],
+      tags: ["widget" as Tag, "component" as Tag, "react" as Tag],
     });
   }
 });
+
+console.log(JSON.stringify(model, null, 2));

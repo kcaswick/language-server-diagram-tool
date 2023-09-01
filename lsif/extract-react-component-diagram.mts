@@ -32,6 +32,69 @@ export const addElement = (model: ModelIndex, element: C4Element) => {
   model.addElement(element);
 };
 
+/**
+ * Converts a ModelIndex object to a LikeC4 DSL string.
+ *
+ * @param model - The ModelIndex object to convert.
+ * @returns The DSL string representation of the ModelIndex object.
+ */
+export const modelIndexToDsl = (model: ModelIndex) => {
+  // Write specification section
+  const dsl = [`specification {`];
+
+  const kinds = new Set(model.elements.map((el) => el.kind));
+  dsl.push(...[...kinds].map((kind) => `  element ${kind}`));
+
+  const tags = new Set(model.elements.flatMap((el) => el.tags ?? []));
+  dsl.push(...[...tags].map((tag) => `  tag ${tag}`));
+
+  dsl.push(`}`);
+
+  // Write model section
+  dsl.push(`model {`);
+
+  const toElementDsl = (el: C4Element, indent = 0) => {
+    const isBlock = el.tags;
+    const dsl = [
+      `${" ".repeat(indent * 2)}${el.id} = ${el.kind} '${el.title}'${
+        el.description || el.technology ? ` '${el.description}'` : ""
+      }${el.technology ? ` '${el.technology}'` : ""}${isBlock ? " {" : ""}`,
+    ];
+    indent += 1;
+    if (el.tags) {
+      dsl.push(`${" ".repeat(indent * 2)}${el.tags.map((tag) => `#${tag}`).join(", ")}`);
+    }
+    // TODO: Write the rest of the element properties, if present
+
+    if (isBlock) {
+      dsl.push(`${" ".repeat(indent * 2)}}`);
+      dsl.push(``);
+    }
+
+    return dsl;
+  };
+
+  model.rootElements().forEach(el => {
+    dsl.push(...toElementDsl(el));
+  });
+
+  dsl.push(
+    ...model.relations.map(
+      (rel) =>
+        `${" ".repeat(2)}${rel.source} -> ${rel.target}${rel.title ? ` '${rel.title}'` : ""}${
+          rel.tags ? ` {${rel.tags.map((tag) => `#${tag}`).join(", ")}}` : ""
+        }`,
+    ),
+  );
+
+  dsl.push(`}`);
+  dsl.push(``);
+
+  // Write views section, at least an index view at a minimum
+
+  return dsl.join("\n");
+};
+
 export const readJsonl = async function* (
   path: fs.PathLike,
   options?: A.Compute<Parameters<typeof fs.createReadStream>[1]>,
@@ -207,8 +270,10 @@ itemIndexOut[referenceResultId]?.references.forEach((referenceId) => {
       description: "React component",
       links: null,
       kind: "widget" as ElementKind,
-      id: AsFqn(tscMoniker.id.toString()),
+      // TODO: Consider moniker, suitably converted, as id
+      id: AsFqn(typeof tscMoniker.id === "number" ? `_${tscMoniker.id}` : tscMoniker.id),
       technology: "react",
+      // TODO: Use shorter titles
       title: tscMoniker.identifier,
       tags: ["widget" as Tag, "component" as Tag, "react" as Tag],
     });
@@ -221,3 +286,5 @@ console.log(
   "elements and relations as JSON",
   JSON.stringify({ elements: model.elements, relations: model.relations }, null, 2),
 );
+
+console.log(modelIndexToDsl(model));

@@ -2,6 +2,7 @@
 /* eslint-disable new-cap */
 import { AsFqn, ModelIndex } from "@likec4/core";
 import type { Element as C4Element, ElementKind, Tag } from "@likec4/core";
+import { dasherize, underscore } from "inflection";
 import {
   DefinitionRange,
   Edge,
@@ -39,8 +40,12 @@ export const addElement = (model: ModelIndex, element: C4Element) => {
  * @returns The DSL string representation of the ModelIndex object.
  */
 export const modelIndexToDsl = (model: ModelIndex) => {
+  const indentSize = 2;
+  let indent = 0;
+
   // Write specification section
   const dsl = [`specification {`];
+  indent++;
 
   const kinds = new Set(model.elements.map((el) => el.kind));
   dsl.push(...[...kinds].map((kind) => `  element ${kind}`));
@@ -48,49 +53,109 @@ export const modelIndexToDsl = (model: ModelIndex) => {
   const tags = new Set(model.elements.flatMap((el) => el.tags ?? []));
   dsl.push(...[...tags].map((tag) => `  tag ${tag}`));
 
+  indent--;
   dsl.push(`}`);
 
   // Write model section
   dsl.push(`model {`);
+  indent++;
 
-  const toElementDsl = (el: C4Element, indent = 0) => {
+  const containerElements: C4Element[] = [];
+
+  const toElementDsl = (el: C4Element, model: ModelIndex, indent = 0) => {
     const isBlock = el.tags;
     const dsl = [
-      `${" ".repeat(indent * 2)}${el.id} = ${el.kind} '${el.title}'${
+      `${" ".repeat(indent * indentSize)}${el.id} = ${el.kind} '${el.title}'${
         el.description || el.technology ? ` '${el.description}'` : ""
       }${el.technology ? ` '${el.technology}'` : ""}${isBlock ? " {" : ""}`,
     ];
     indent += 1;
     if (el.tags) {
-      dsl.push(`${" ".repeat(indent * 2)}${el.tags.map((tag) => `#${tag}`).join(", ")}`);
+      dsl.push(`${" ".repeat(indent * indentSize)}${el.tags.map((tag) => `#${tag}`).join(", ")}`);
     }
     // TODO: Write the rest of the element properties, if present
 
+    // Write child elements, if present
+    const children = model.children(el.id);
+    if (children?.length > 0) {
+      containerElements.push(el);
+    }
+
+    children.forEach((child) => {
+      dsl.push(``);
+      dsl.push(...toElementDsl(child, model, indent));
+    });
+
     if (isBlock) {
-      dsl.push(`${" ".repeat(indent * 2)}}`);
+      dsl.push(`${" ".repeat(indent * indentSize)}}`);
       dsl.push(``);
     }
 
     return dsl;
   };
 
-  model.rootElements().forEach(el => {
-    dsl.push(...toElementDsl(el));
+  model.rootElements().forEach((el) => {
+    dsl.push(...toElementDsl(el, model, indent));
   });
 
   dsl.push(
     ...model.relations.map(
       (rel) =>
-        `${" ".repeat(2)}${rel.source} -> ${rel.target}${rel.title ? ` '${rel.title}'` : ""}${
-          rel.tags ? ` {${rel.tags.map((tag) => `#${tag}`).join(", ")}}` : ""
-        }`,
+        `${" ".repeat(indent * indentSize)}${rel.source} -> ${rel.target}${
+          rel.title ? ` '${rel.title}'` : ""
+        }${rel.tags ? ` {${rel.tags.map((tag) => `#${tag}`).join(", ")}}` : ""}`,
     ),
   );
 
-  dsl.push(`}`);
+  indent--;
+  dsl.push(`${" ".repeat(indent * indentSize)}}`);
   dsl.push(``);
 
   // Write views section, at least an index view at a minimum
+  dsl.push(`views {`);
+  indent++;
+
+  // TODO: Decide whether the index should be `of` the top level system, or globally scoped.
+  dsl.push(`${" ".repeat(indent * indentSize)}view index {`);
+  indent++;
+  dsl.push(`${" ".repeat(indent * indentSize)}title 'Landscape'`);
+  dsl.push(`${" ".repeat(indent * indentSize)}include *`);
+  indent--;
+  dsl.push(`${" ".repeat(indent * indentSize)}}`);
+  dsl.push(``);
+
+  containerElements.forEach((el) => {
+    // Are there any containers we would not want a view of and should skip?
+    dsl.push(`${" ".repeat(indent * indentSize)}view ${dasherize(el.title)} of ${el.id} {`);
+    indent++;
+
+    const viewType = (() => {
+      switch (el.kind) {
+        case "system":
+        case "softwareSystem":
+          // How do we get system context diagrams?
+          return "Container";
+        case "container":
+          return "Component";
+        case "component":
+          return "Code";
+        case "environment":
+          return "Deployment";
+        default:
+          return "";
+      }
+    })();
+
+    dsl.push(`${" ".repeat(indent * indentSize)}title '${el.title} - ${viewType}'`);
+    dsl.push(`${" ".repeat(indent * indentSize)}include *`);
+
+    indent--;
+    dsl.push(`${" ".repeat(indent * indentSize)}}`);
+  });
+
+  indent--;
+  dsl.push(`}`);
+  dsl.push(``);
 
   return dsl.join("\n");
 };
@@ -280,9 +345,9 @@ itemIndexOut[referenceResultId]?.references.forEach((referenceId) => {
   }
 });
 
-console.log("modelIndex as JSON", JSON.stringify(model, null, 2));
+console.debug("modelIndex as JSON", JSON.stringify(model, null, 2));
 
-console.log(
+console.debug(
   "elements and relations as JSON",
   JSON.stringify({ elements: model.elements, relations: model.relations }, null, 2),
 );

@@ -19,6 +19,7 @@
   "dependencies": {
     "@likec4/core": "^0.33.1",
     "@types/node": "^16.18.46",
+    "inflection": "^2.0.1",
     "prettier": "^3.0.3",
     "ts-node": "^10.9.1",
     "zx": "^7.2.3"

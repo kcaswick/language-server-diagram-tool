@@ -2,11 +2,13 @@
 /* eslint-disable new-cap */
 import { AsFqn, ModelIndex } from "@likec4/core";
 import type { Element as C4Element, ElementKind, Tag } from "@likec4/core";
-import { dasherize, underscore } from "inflection";
+import { camelize, dasherize, titleize, underscore } from "inflection";
 import {
   DefinitionRange,
   Edge,
+  EdgeLabels,
   Element,
+  HoverResult,
   ItemEdgeProperties,
   Moniker,
   Range,
@@ -16,10 +18,12 @@ import {
   item,
   moniker,
   next,
+  textDocument_hover,
   textDocument_references,
 } from "lsif-protocol";
 import readline from "readline";
 import { A, M } from "ts-toolbelt";
+import { Hover, MarkupContent, MarkedString } from "vscode-languageserver-protocol";
 import yargs, { Arguments } from "yargs";
 import { hideBin } from "yargs/helpers";
 import { $, fs } from "zx";
@@ -32,6 +36,35 @@ import { $, fs } from "zx";
 export const addElement = (model: ModelIndex, element: C4Element) => {
   model.addElement(element);
 };
+
+/**
+ * Converts a Hover object to a string representation of the documentation.
+ * @param hover The Hover object to convert.
+ * @returns A string representation of the Hover object.
+ */
+export const hoverToString = (hover: Hover) => {
+  if (MarkupContent.is(hover.contents)) {
+    return hover.contents.value;
+  }
+
+  if (MarkedString.is(hover.contents)) {
+    return markedStringToString(hover.contents);
+  }
+
+  if (Array.isArray(hover.contents) && hover.contents.every(MarkedString.is)) {
+    return hover.contents.map(markedStringToString).join("\n");
+  }
+};
+
+/**
+ * Converts a `MarkedString` to a plain string.
+ * @param markedString The `MarkedString` to convert.
+ * @returns The plain string representation of the `MarkedString`.
+ */
+export const markedStringToString = (markedString: MarkedString) =>
+  typeof markedString === "object"
+    ? "" /* Instead of `markedString.value` because that usually has the type definition */
+    : markedString;
 
 /**
  * Converts a ModelIndex object to a LikeC4 DSL string.
@@ -94,6 +127,7 @@ export const modelIndexToDsl = (model: ModelIndex) => {
     return dsl;
   };
 
+  console.debug("model.rootElements()", model.rootElements());
   model.rootElements().forEach((el) => {
     dsl.push(...toElementDsl(el, model, indent));
   });
@@ -213,6 +247,7 @@ console.debug("argv", argv);
 
 const componentTypeRanges: Record<string, Range> = {};
 const elements = [] as Element[];
+const outIndex: Map<number, Map<EdgeLabels | "undefined", number[]>> = new Map();
 const itemIndexOut: Record<number, Record<ItemEdgeProperties | "undefined", number[]> | undefined> =
   {};
 const model = new ModelIndex();
@@ -261,6 +296,20 @@ for await (const line of argv.input) {
       }
     } else if (textDocument_references.is(line)) {
       textDocument_referencesIndexOut[line.outV as number] = line.inV as number;
+    } else if (textDocument_hover.is(line)) {
+      let edgeMap = outIndex.get(line.outV as number);
+      if (edgeMap === undefined) {
+        edgeMap = new Map();
+        outIndex.set(line.outV as number, edgeMap);
+      }
+
+      let inArray = edgeMap.get(line.label);
+      if (inArray === undefined) {
+        inArray = [];
+        edgeMap?.set(line.label, inArray);
+      }
+
+      inArray.push(line.inV as number);
     } else if (item.is(line) && Edge.is1N(line)) {
       const it = line as unknown as item;
       const newItemEdgeMapEntries = (
@@ -305,7 +354,7 @@ itemIndexOut[referenceResultId]?.references.forEach((referenceId) => {
       referenceId === 588 ? 503 : referenceId === 645 ? 627 : 0
     ] as DefinitionRange;
 
-    const resultSetId = nextIndexOut[definitionRange.id as number][0]; // 497
+    const resultSetId = nextIndexOut[definitionRange.id as number][0]; // 497, 621
 
     // {"id":498,"type":"vertex","label":"moniker","scheme":"tsc","identifier":"lib/packages/items/FeatureFlags:Feature","unique":"workspace","kind":"export"}
     // TODO: Verify there is single element in array or handle multiple
@@ -328,18 +377,32 @@ itemIndexOut[referenceResultId]?.references.forEach((referenceId) => {
       throw new Error(`Expected a single tsc moniker but found ${JSON.stringify(tscMonikers)}`);
     }
 
+    const hoverIDs = outIndex.get(resultSetId)?.get(EdgeLabels.textDocument_hover);
+    console.debug("hoverIDs", hoverIDs);
+    const hoverID = hoverIDs?.[0];
+    console.debug("hoverID", hoverID);
+    const hover = elements[hoverID as number] as HoverResult;
+
     const tscMoniker = tscMonikers[0];
     console.debug("tscMoniker", tscMoniker);
 
     addElement(model, {
-      description: "React component",
+      description: hoverToString(hover?.result) ?? "",
       links: null,
       kind: "widget" as ElementKind,
       // TODO: Consider moniker, suitably converted, as id
-      id: AsFqn(typeof tscMoniker.id === "number" ? `_${tscMoniker.id}` : tscMoniker.id),
-      technology: "react",
+      id: AsFqn(
+        tscMoniker.identifier
+          ? camelize(tscMoniker.identifier).replace(/:+/g, "_")
+          : typeof tscMoniker.id === "number"
+          ? `_${tscMoniker.id}`
+          : tscMoniker.id,
+      ),
+      technology: "React component",
       // TODO: Use shorter titles
-      title: tscMoniker.identifier,
+      title:
+        definitionRange.tag?.text ??
+        titleize(underscore(tscMoniker.identifier.split(":").pop() ?? "Unknown")),
       tags: ["widget" as Tag, "component" as Tag, "react" as Tag],
     });
   }

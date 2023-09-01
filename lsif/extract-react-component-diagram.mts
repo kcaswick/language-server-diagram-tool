@@ -338,10 +338,16 @@ for await (const line of argv.input) {
   }
 }
 
+// Process the model and add all React components to the model
+
+const elementResultSetIds: number[] = [];
+
 // {"id":584,"type":"vertex","label":"range","start":{"line":545,"character":14},"end":{"line":545,"character":31},"tag":{"type":"definition","text":"FunctionComponent","kind":11,"fullRange":{"start":{"line":545,"character":4},"end":{"line":551,"character":5}}}}
 const resultSetId = nextIndexOut[componentTypeRanges.FunctionComponent.id as number][0]; // 581
 const referenceResultId = textDocument_referencesIndexOut[resultSetId]; // 930
 console.debug("referenceResultId", referenceResultId);
+
+// TODO: Make this a function, and also apply it to the referenceResults for ClassComponent, PureComponent, and ComponentType
 itemIndexOut[referenceResultId]?.references.forEach((referenceId) => {
   // [588,645, 4261, 7043, 9735, 15832, 30761, 42710, 47293, 54658, 55255, 62295,62324, 77085, 79022, 99738]
   const reference = elements[referenceId];
@@ -405,8 +411,11 @@ itemIndexOut[referenceResultId]?.references.forEach((referenceId) => {
         titleize(underscore(tscMoniker.identifier.split(":").pop() ?? "Unknown")),
       tags: ["widget" as Tag, "component" as Tag, "react" as Tag],
     });
+    elementResultSetIds.push(resultSetId);
   }
 });
+
+// TODO: Add all the references between elements that were included in the model as relationships
 
 console.debug("modelIndex as JSON", JSON.stringify(model, null, 2));
 

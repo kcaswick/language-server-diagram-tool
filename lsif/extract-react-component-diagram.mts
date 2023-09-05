@@ -359,6 +359,16 @@ itemIndexOut[referenceResultId]?.references.forEach((referenceId) => {
     const definitionRange: DefinitionRange = elements[
       referenceId === 588 ? 503 : referenceId === 645 ? 627 : 0
     ] as DefinitionRange;
+    console.debug(`definitionRange for inner reference hard coded to `, definitionRange);
+
+    if (definitionRange === undefined) {
+      console.error(
+        `ERROR: No definition range found for ${reference.tag?.type}`,
+        reference.tag?.text,
+        `at ${reference.start.line}:${reference.start.character}`,
+      );
+      return;
+    }
 
     const resultSetId = nextIndexOut[definitionRange.id as number][0]; // 497, 621
 
@@ -424,4 +434,4 @@ console.debug(
   JSON.stringify({ elements: model.elements, relations: model.relations }, null, 2),
 );
 
-console.log(modelIndexToDsl(model));
+console.log("\nLikeC4 DSL\n", modelIndexToDsl(model));

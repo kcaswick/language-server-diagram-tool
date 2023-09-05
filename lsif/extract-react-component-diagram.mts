@@ -24,13 +24,13 @@ import {
 } from "lsif-protocol";
 import readline from "readline";
 import { A, M } from "ts-toolbelt";
-import { Hover, MarkupContent, MarkedString } from "vscode-languageserver-protocol";
+import { Hover, Location, MarkupContent, MarkedString } from "vscode-languageserver-protocol";
 import yargs, { Arguments } from "yargs";
 import { hideBin } from "yargs/helpers";
 import { $, fs } from "zx";
 
-import { JsonStore } from "./lsif-server-modules/jsonStore";
 import { noopTransformer } from "./lsif-server-modules/database";
+import { JsonStoreEnhanced } from "./jsonStoreEnhanced";
 
 /**
  * Adds a new element to the given LikeC4 model index.
@@ -59,6 +59,14 @@ export const hoverToString = (hover: Hover) => {
     return hover.contents.map(markedStringToString).join("\n");
   }
 };
+
+/**
+ * Converts a location object to a string in the format "uri:startLine:startCharacter:endLine:endCharacter".
+ * @param r The location object to convert.
+ * @returns A string representation of the location object.
+ */
+export const locationToString = (r: Location) =>
+  `${r.uri}:${r.range.start.line + 1}:${r.range.start.character + 1} - ${r.range.end.line + 1}:${r.range.end.character + 1}`;
 
 /**
  * Converts a `MarkedString` to a plain string.
@@ -352,7 +360,7 @@ for await (const line of argv.input.lines) {
   }
 }
 
-const inputStore = new JsonStore();
+const inputStore = new JsonStoreEnhanced();
 await inputStore.load(argv.input.path, () => noopTransformer);
 
 // Process the model and add all React components to the model
@@ -370,15 +378,27 @@ itemIndexOut[referenceResultId]?.references.forEach((referenceId) => {
   const reference = elements[referenceId];
   if (reference && Range.is(reference) && reference.tag?.type === RangeTagTypes.reference) {
     console.debug("inner reference", reference);
-    // TODO: Find the surrounding fullRange on a range of type "definition"
+
+    // Find the surrounding fullRange on a range of type "definition"
+    const definitionRanges = inputStore.findFullRangesFromPosition(
+      "file:///c:/Users/kcaswick/source/repos/spfx-wp-operations/src/packages/items/FeatureFlags.ts",
+      reference.start,
+    );
+    console.debug("definitionRanges", definitionRanges);
+    const referenceRanges = inputStore.references(
+      inputStore.getDocumentFromRange(reference)?.uri ?? "",
+      reference.start,
+      {
+        includeDeclaration: true,
+      },
+    );
+    console.debug("referenceRanges", referenceRanges?.map(locationToString));
 
     // {"id":503,"type":"vertex","label":"range","start":{"line":32,"character":13},"end":{"line":32,"character":20},"tag":{"type":"definition","text":"Feature","kind":7,"fullRange":{"start":{"line":32,"character":13},"end":{"line":34,"character":19}}}}
-    const definitionRange: DefinitionRange = elements[
-      referenceId === 588 ? 503 : referenceId === 645 ? 627 : 0
-    ] as DefinitionRange;
-    console.debug(`definitionRange for inner reference hard coded to `, definitionRange);
+    const definitionRange /* : DefinitionRange | undefined */ = definitionRanges?.[0];
+    console.debug(`definitionRange for inner reference`, definitionRange);
 
-    if (definitionRange === undefined) {
+    if (definitionRange === undefined || !DefinitionRange.is(definitionRange)) {
       console.error(
         `ERROR: No definition range found for ${reference.tag?.type}`,
         reference.tag?.text,

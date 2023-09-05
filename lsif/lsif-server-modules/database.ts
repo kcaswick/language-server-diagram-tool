@@ -2,7 +2,9 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
-import { URI } from 'vscode-uri';
+// Does not load right - import { URI } from "vscode-uri";
+const URI = URL;
+type URI = URL;
 import * as lsp from 'vscode-languageserver';
 import { Range, Id } from 'lsif-protocol';
 
@@ -27,7 +29,7 @@ export abstract class Database {
 	}
 
 	protected initialize(transformerFactory: (workspaceRoot: string) => UriTransformer): void {
-		const workspaceRoot = this.getWorkspaceRoot().toString(true);
+		const workspaceRoot = this.getWorkspaceRoot().toString(/* true */);
 		this.uriTransformer = transformerFactory ? transformerFactory(workspaceRoot) : noopTransformer;
 		this.fileSystem = new FileSystem(workspaceRoot, this.getDocumentInfos());
 	}

@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "lsif-protocol": "^0.5.3",
+    "lsif-protocol": "^0.6.0-next.7",
     "ts-node": "^10.9.1",
     "yargs": "^17.7.2",
     "zx": "^7.2.3"

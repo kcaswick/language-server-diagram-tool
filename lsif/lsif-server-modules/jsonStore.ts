@@ -220,12 +220,12 @@ export class JsonStore extends Database {
           return;
         }
 
-        const range: SemVer.Range = new SemVer.Range(">0.5.99 <=0.6.0-next.4");
+        const range: SemVer.Range = new SemVer.Range(">0.5.99 <=0.6.0-next.7");
         range.includePrerelease = true;
         if (!SemVer.satisfies(semVer, range)) {
           reject(
             new Error(
-              `Requires version range >0.5.99 <=0.6.0-next.4 but received: ${this.version}`,
+              `Requires version range >0.5.99 <=0.6.0-next.7 but received: ${this.version}`,
             ),
           );
           return;
@@ -251,9 +251,9 @@ export class JsonStore extends Database {
       case VertexLabels.metaData:
         this.version = vertex.version;
         break;
-      // Comment out error -   case VertexLabels.source:
-      //     this.workspaceRoot = new URI(vertex.workspaceRoot);
-      //     break;
+      case VertexLabels.source:
+          this.workspaceRoot = new URI(vertex.workspaceRoot);
+          break;
       case VertexLabels.project:
         this.vertices.projects.set(vertex.id, vertex);
         break;

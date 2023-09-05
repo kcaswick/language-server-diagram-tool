@@ -7,7 +7,7 @@ import {
   DefinitionRange,
   Edge,
   EdgeLabels,
-  Element,
+  GraphElement,
   HoverResult,
   ItemEdgeProperties,
   Moniker,
@@ -15,6 +15,7 @@ import {
   RangeTagTypes,
   Vertex,
   VertexLabels,
+  attach,
   item,
   moniker,
   next,
@@ -27,6 +28,9 @@ import { Hover, MarkupContent, MarkedString } from "vscode-languageserver-protoc
 import yargs, { Arguments } from "yargs";
 import { hideBin } from "yargs/helpers";
 import { $, fs } from "zx";
+
+import { JsonStore } from "./lsif-server-modules/jsonStore";
+import { noopTransformer } from "./lsif-server-modules/database";
 
 /**
  * Adds a new element to the given LikeC4 model index.
@@ -206,6 +210,24 @@ export const readJsonl = async function* (
   }
 };
 
+const coerceFile = (input: string | undefined) => {
+  if (input && input !== "-" && input !== ".") {
+    // If input is a file path, read from the file
+    return { path: input, lines: readJsonl(input, "utf8") };
+  }
+
+  if ((input && (input === "-" || input === ".")) || argv.stdin) {
+    // If filename is `-` or --stdin flag is set, read from stdin
+    // const stdin = fs.readFileSync(process.stdin.fd, "utf8");
+    return {
+      path: "stdin",
+      lines: readJsonl("-", { fd: process.stdin.fd, encoding: "utf8" }),
+    };
+  }
+
+  throw new Error("No input file specified");
+};
+
 const argv = yargs(hideBin(process.argv))
   .command("$0 <input>", "Extract React component diagram from LSIF file", (yargs) =>
     yargs
@@ -213,18 +235,7 @@ const argv = yargs(hideBin(process.argv))
         type: "string",
         describe: "LSIF file to extract from",
         normalize: true,
-        coerce(input: string | undefined) {
-          if (input && input !== "-" && input !== ".") {
-            // If input is a file path, read from the file
-            return readJsonl(input, "utf8");
-          }
-
-          if ((input && (input === "-" || input === ".")) || argv.stdin) {
-            // If filename is `-` or --stdin flag is set, read from stdin
-            // const stdin = fs.readFileSync(process.stdin.fd, "utf8");
-            return readJsonl("-", { fd: process.stdin.fd, encoding: "utf8" });
-          }
-        },
+        coerce: coerceFile,
       })
       .option("stdin", {
         description: "Reads the LSIF from stdin.",
@@ -239,14 +250,14 @@ const argv = yargs(hideBin(process.argv))
   .version()
   .alias("v", "version")
   .parseSync() as Arguments<{
-  input: ReturnType<typeof readJsonl>;
+  input: ReturnType<typeof coerceFile>;
   stdin: boolean;
 }>;
 
 console.debug("argv", argv);
 
 const componentTypeRanges: Record<string, Range> = {};
-const elements = [] as Element[];
+const elements = [] as GraphElement[];
 const outIndex: Map<number, Map<EdgeLabels | "undefined", number[]>> = new Map();
 const itemIndexOut: Record<number, Record<ItemEdgeProperties | "undefined", number[]> | undefined> =
   {};
@@ -256,8 +267,8 @@ const monikerIndexOut: Record<number, number[]> = {};
 const nextIndexIn: Record<number, number[]> = {};
 const nextIndexOut: Record<number, number[]> = {};
 const textDocument_referencesIndexOut: Record<number, number> = {};
-for await (const line of argv.input) {
-  if (Element.is(line)) {
+for await (const line of argv.input.lines) {
+  if (GraphElement.is(line)) {
     elements[line.id as number] = line;
 
     if (Range.is(line) && line.tag?.type === RangeTagTypes.definition) {
@@ -283,33 +294,36 @@ for await (const line of argv.input) {
         monikerIndexOut[line.outV as number] = [line.inV as number];
       }
     } else if (next.is(line)) {
-      if (nextIndexIn[line.inV as number]) {
-        nextIndexIn[line.inV as number].push(line.outV as number);
+      const edge: next = line;
+      if (nextIndexIn[edge.inV as number]) {
+        nextIndexIn[edge.inV as number].push(edge.outV as number);
       } else {
-        nextIndexIn[line.inV as number] = [line.outV as number];
+        nextIndexIn[edge.inV as number] = [edge.outV as number];
       }
 
-      if (nextIndexOut[line.outV as number]) {
-        nextIndexOut[line.outV as number].push(line.inV as number);
+      if (nextIndexOut[edge.outV as number]) {
+        nextIndexOut[edge.outV as number].push(edge.inV as number);
       } else {
-        nextIndexOut[line.outV as number] = [line.inV as number];
+        nextIndexOut[edge.outV as number] = [edge.inV as number];
       }
     } else if (textDocument_references.is(line)) {
-      textDocument_referencesIndexOut[line.outV as number] = line.inV as number;
+      const edge: textDocument_references = line;
+      textDocument_referencesIndexOut[edge.outV as number] = edge.inV as number;
     } else if (textDocument_hover.is(line)) {
-      let edgeMap = outIndex.get(line.outV as number);
+      const edge: textDocument_hover = line;
+      let edgeMap = outIndex.get(edge.outV as number);
       if (edgeMap === undefined) {
         edgeMap = new Map();
-        outIndex.set(line.outV as number, edgeMap);
+        outIndex.set(edge.outV as number, edgeMap);
       }
 
-      let inArray = edgeMap.get(line.label);
+      let inArray = edgeMap.get(edge.label);
       if (inArray === undefined) {
         inArray = [];
-        edgeMap?.set(line.label, inArray);
+        edgeMap?.set(edge.label, inArray);
       }
 
-      inArray.push(line.inV as number);
+      inArray.push(edge.inV as number);
     } else if (item.is(line) && Edge.is1N(line)) {
       const it = line as unknown as item;
       const newItemEdgeMapEntries = (
@@ -318,7 +332,7 @@ for await (const line of argv.input) {
         .map((key) => [key, [] as number[]])
         .concat([["undefined", []]]);
       // eslint-disable-next-line no-multi-assign
-      const itemEdgeMap = (itemIndexOut[line.outV as number] ??= (() => {
+      const itemEdgeMap = (itemIndexOut[it.outV as number] ??= (() => {
         try {
           return Object.fromEntries(newItemEdgeMapEntries);
         } catch (e) {
@@ -330,13 +344,16 @@ for await (const line of argv.input) {
         }
       })() as Record<ItemEdgeProperties | "undefined", number[]>);
       itemEdgeMap[it.property ?? "undefined"] = itemEdgeMap[it.property ?? "undefined"].concat(
-        line.inVs as number[],
+        it.inVs as number[],
       );
     }
   } else if (line) {
     console.error("Unknown line type", line);
   }
 }
+
+const inputStore = new JsonStore();
+await inputStore.load(argv.input.path, () => noopTransformer);
 
 // Process the model and add all React components to the model
 

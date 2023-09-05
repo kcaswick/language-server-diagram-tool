@@ -22,6 +22,7 @@
     "inflection": "^2.0.1",
     "prettier": "^3.0.3",
     "ts-node": "^10.9.1",
+    "vscode-languageserver": "~8.1.0",
     "zx": "^7.2.3"
   },
   "devDependencies": {

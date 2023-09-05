@@ -44,6 +44,7 @@ import {
   Moniker as PMoniker,
   moniker,
   MonikerKind,
+  V,
 } from "lsif-protocol";
 
 import { DocumentInfo } from "./files";
@@ -289,6 +290,15 @@ export class JsonStore extends Database {
         break;
       case VertexLabels.range:
         this.vertices.ranges.set(vertex.id, vertex);
+        break;
+      // Added to eliminate unneeded errors
+      case VertexLabels.definitionResult:
+      case VertexLabels.foldingRangeResult:
+      case VertexLabels.hoverResult:
+      case VertexLabels.packageInformation:
+      case VertexLabels.referenceResult:
+      case VertexLabels.resultSet:
+        // These labels are expected but have no extra handling
         break;
       default:
         console.error(`Unknown vertex label: ${vertex.label}`);

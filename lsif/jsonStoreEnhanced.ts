@@ -60,4 +60,18 @@ export class JsonStoreEnhanced extends JsonStore {
     const candidate = this["in"].contains.get(range.id);
     return Document.is(candidate) ? candidate : undefined;
   }
+
+  public getLinkFromRange(range: Range) {
+    return locationToString({ uri: this.getDocumentFromRange(range)?.uri ?? "", range });
+  }
 }
+
+/**
+ * Converts a location object to a link in the format "uri:startLine:startCharacter:endLine:endCharacter".
+ * @param r The location object to convert.
+ * @returns A string representation of the location object.
+ */
+export const locationToString = (r: lsp.Location) =>
+  `${r.uri}:${r.range.start.line + 1}:${r.range.start.character + 1} - ${r.range.end.line + 1}:${
+    r.range.end.character + 1
+  }`;

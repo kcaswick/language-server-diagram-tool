@@ -15,7 +15,6 @@ import {
   RangeTagTypes,
   Vertex,
   VertexLabels,
-  attach,
   item,
   moniker,
   next,
@@ -24,13 +23,13 @@ import {
 } from "lsif-protocol";
 import readline from "readline";
 import { A, M } from "ts-toolbelt";
-import { Hover, Location, MarkupContent, MarkedString } from "vscode-languageserver-protocol";
+import { Hover, MarkupContent, MarkedString } from "vscode-languageserver-protocol";
 import yargs, { Arguments } from "yargs";
 import { hideBin } from "yargs/helpers";
 import { $, fs } from "zx";
 
 import { noopTransformer } from "./lsif-server-modules/database";
-import { JsonStoreEnhanced } from "./jsonStoreEnhanced";
+import { JsonStoreEnhanced, locationToString } from "./jsonStoreEnhanced";
 
 /**
  * Adds a new element to the given LikeC4 model index.
@@ -59,14 +58,6 @@ export const hoverToString = (hover: Hover) => {
     return hover.contents.map(markedStringToString).join("\n");
   }
 };
-
-/**
- * Converts a location object to a string in the format "uri:startLine:startCharacter:endLine:endCharacter".
- * @param r The location object to convert.
- * @returns A string representation of the location object.
- */
-export const locationToString = (r: Location) =>
-  `${r.uri}:${r.range.start.line + 1}:${r.range.start.character + 1} - ${r.range.end.line + 1}:${r.range.end.character + 1}`;
 
 /**
  * Converts a `MarkedString` to a plain string.
@@ -377,25 +368,21 @@ itemIndexOut[referenceResultId]?.references.forEach((referenceId) => {
   // [588,645, 4261, 7043, 9735, 15832, 30761, 42710, 47293, 54658, 55255, 62295,62324, 77085, 79022, 99738]
   const reference = elements[referenceId];
   if (reference && Range.is(reference) && reference.tag?.type === RangeTagTypes.reference) {
-    console.debug("inner reference", reference);
+    console.debug("inner reference", inputStore.getLinkFromRange(reference), reference);
 
     // Find the surrounding fullRange on a range of type "definition"
     const definitionRanges = inputStore.findFullRangesFromPosition(
-      "file:///c:/Users/kcaswick/source/repos/spfx-wp-operations/src/packages/items/FeatureFlags.ts",
-      reference.start,
-    );
-    console.debug("definitionRanges", definitionRanges);
-    const referenceRanges = inputStore.references(
       inputStore.getDocumentFromRange(reference)?.uri ?? "",
       reference.start,
-      {
-        includeDeclaration: true,
-      },
     );
-    console.debug("referenceRanges", referenceRanges?.map(locationToString));
+    console.debug(
+      "definitionRanges",
+      definitionRanges,
+      definitionRanges?.map((r) => inputStore.getLinkFromRange(r)),
+    );
 
     // {"id":503,"type":"vertex","label":"range","start":{"line":32,"character":13},"end":{"line":32,"character":20},"tag":{"type":"definition","text":"Feature","kind":7,"fullRange":{"start":{"line":32,"character":13},"end":{"line":34,"character":19}}}}
-    const definitionRange /* : DefinitionRange | undefined */ = definitionRanges?.[0];
+    const definitionRange = definitionRanges?.[0];
     console.debug(`definitionRange for inner reference`, definitionRange);
 
     if (definitionRange === undefined || !DefinitionRange.is(definitionRange)) {
@@ -446,7 +433,9 @@ itemIndexOut[referenceResultId]?.references.forEach((referenceId) => {
       // TODO: Consider moniker, suitably converted, as id
       id: AsFqn(
         tscMoniker.identifier
-          ? camelize(tscMoniker.identifier).replace(/:+/g, "_")
+          ? camelize(tscMoniker.identifier.replace(/\.(?=[jt]sx?:)/, "_"))
+              .replace(/:+/g, "_")
+              .replace(/=/g, "_")
           : typeof tscMoniker.id === "number"
           ? `_${tscMoniker.id}`
           : tscMoniker.id,
@@ -463,6 +452,15 @@ itemIndexOut[referenceResultId]?.references.forEach((referenceId) => {
 });
 
 // TODO: Add all the references between elements that were included in the model as relationships
+
+// const referenceRanges = inputStore.references(
+//   inputStore.getDocumentFromRange(reference)?.uri ?? "",
+//   reference.start,
+//   {
+//     includeDeclaration: true,
+//   },
+// );
+// console.debug("referenceRanges", referenceRanges?.map(locationToString));
 
 console.debug("modelIndex as JSON", JSON.stringify(model, null, 2));
 

@@ -292,7 +292,9 @@ export class JsonStore extends Database {
         this.vertices.ranges.set(vertex.id, vertex);
         break;
       // Added to eliminate unneeded errors
+      case VertexLabels.capabilities:
       case VertexLabels.definitionResult:
+      case VertexLabels.documentSymbolResult:
       case VertexLabels.foldingRangeResult:
       case VertexLabels.hoverResult:
       case VertexLabels.packageInformation:

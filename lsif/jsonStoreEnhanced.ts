@@ -62,12 +62,31 @@ export class JsonStoreEnhanced extends JsonStore {
   }
 
   public getLinkFromRange(range: Range) {
-    return locationToString({ uri: this.getDocumentFromRange(range)?.uri ?? "", range });
+    return locationToString({ uri: this.getDocumentFromRange(range)?.uri ?? "", range }).split(
+      " - ",
+    )[0];
+  }
+
+  public getMonikerFromRange(range: Range) {
+    const resultPath = this["getResultPath"](range.id, this["out"].references);
+    if (resultPath.result === undefined) {
+      return;
+    }
+
+    const mostSpecificMoniker = this["getMostSpecificMoniker"](resultPath);
+    return mostSpecificMoniker;
   }
 }
 
 /**
- * Converts a location object to a link in the format "uri:startLine:startCharacter:endLine:endCharacter".
+ * Converts a given location object to a link.
+ * @param r The location object to convert.
+ * @returns The link portion of the string representation of the location.
+ */
+export const locationToLink = (r: lsp.Location) => locationToString(r).split(" - ")[0];
+
+/**
+ * Converts a location object to a string in the format "uri:startLine:startCharacter:endLine:endCharacter".
  * @param r The location object to convert.
  * @returns A string representation of the location object.
  */

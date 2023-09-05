@@ -1,8 +1,8 @@
 #!/usr/bin/env zx
 /* eslint-disable new-cap */
-import { AsFqn, ModelIndex } from "@likec4/core";
-import type { Element as C4Element, ElementKind, Tag } from "@likec4/core";
-import { camelize, dasherize, titleize, underscore } from "inflection";
+import { AsFqn, InvalidModelError, ModelIndex } from "@likec4/core";
+import type { Element as C4Element, ElementKind, Fqn, Relation, RelationID, Tag } from "@likec4/core";
+import { camelize, dasherize, humanize, titleize, underscore } from "inflection";
 import {
   DefinitionRange,
   Edge,
@@ -86,7 +86,11 @@ export const modelIndexToDsl = (model: ModelIndex) => {
   const kinds = new Set(model.elements.map((el) => el.kind));
   dsl.push(...[...kinds].map((kind) => `  element ${kind}`));
 
-  const tags = new Set(model.elements.flatMap((el) => el.tags ?? []));
+  const tags = new Set(
+    model.elements
+      .flatMap((el) => el.tags ?? [])
+      .concat(model.relations.flatMap((rel) => rel.tags ?? [])),
+  );
   dsl.push(...[...tags].map((tag) => `  tag ${tag}`));
 
   indent--;
@@ -109,6 +113,11 @@ export const modelIndexToDsl = (model: ModelIndex) => {
     if (el.tags) {
       dsl.push(`${" ".repeat(indent * indentSize)}${el.tags.map((tag) => `#${tag}`).join(", ")}`);
     }
+
+    el.links?.forEach((link) => {
+      dsl.push(`${" ".repeat(indent * indentSize)}link ${encodeURI(link)}`);
+    });
+
     // TODO: Write the rest of the element properties, if present
 
     // Write child elements, if present
@@ -196,6 +205,24 @@ export const modelIndexToDsl = (model: ModelIndex) => {
 
   return dsl.join("\n");
 };
+
+/**
+ * Sanitizes a Moniker and converts it to a fully qualified name (FQN) string.
+ * @param moniker The Moniker object to convert.
+ * @returns The FQN string.
+ */
+export function monikerToFqn(moniker: Moniker) {
+  return AsFqn(
+    moniker.identifier
+      ? camelize(moniker.identifier.replace(/\.(?=[jt]sx?:)/, "_"))
+          .replace(/:+/g, "_")
+          .replace(/[=+]/g, "_")
+          .replace(/^(\d)/, "_$1")
+      : typeof moniker.id === "number"
+      ? `_${moniker.id}`
+      : moniker.id,
+  );
+}
 
 export const readJsonl = async function* (
   path: fs.PathLike,
@@ -356,7 +383,7 @@ await inputStore.load(argv.input.path, () => noopTransformer);
 
 // Process the model and add all React components to the model
 
-const elementResultSetIds: number[] = [];
+const elementDefinitionRanges = new Map<Fqn, DefinitionRange>();
 
 // {"id":584,"type":"vertex","label":"range","start":{"line":545,"character":14},"end":{"line":545,"character":31},"tag":{"type":"definition","text":"FunctionComponent","kind":11,"fullRange":{"start":{"line":545,"character":4},"end":{"line":551,"character":5}}}}
 const resultSetId = nextIndexOut[componentTypeRanges.FunctionComponent.id as number][0]; // 581
@@ -426,20 +453,12 @@ itemIndexOut[referenceResultId]?.references.forEach((referenceId) => {
     const tscMoniker = tscMonikers[0];
     console.debug("tscMoniker", tscMoniker);
 
+    const newId = monikerToFqn(tscMoniker);
     addElement(model, {
       description: hoverToString(hover?.result) ?? "",
       links: null,
       kind: "widget" as ElementKind,
-      // TODO: Consider moniker, suitably converted, as id
-      id: AsFqn(
-        tscMoniker.identifier
-          ? camelize(tscMoniker.identifier.replace(/\.(?=[jt]sx?:)/, "_"))
-              .replace(/:+/g, "_")
-              .replace(/=/g, "_")
-          : typeof tscMoniker.id === "number"
-          ? `_${tscMoniker.id}`
-          : tscMoniker.id,
-      ),
+      id: newId,
       technology: "React component",
       // TODO: Use shorter titles
       title:
@@ -447,20 +466,108 @@ itemIndexOut[referenceResultId]?.references.forEach((referenceId) => {
         titleize(underscore(tscMoniker.identifier.split(":").pop() ?? "Unknown")),
       tags: ["widget" as Tag, "component" as Tag, "react" as Tag],
     });
-    elementResultSetIds.push(resultSetId);
+    elementDefinitionRanges.set(newId, definitionRange);
   }
 });
 
-// TODO: Add all the references between elements that were included in the model as relationships
+// Add all the references between elements that were included in the model as relationships
 
-// const referenceRanges = inputStore.references(
-//   inputStore.getDocumentFromRange(reference)?.uri ?? "",
-//   reference.start,
-//   {
-//     includeDeclaration: true,
-//   },
-// );
-// console.debug("referenceRanges", referenceRanges?.map(locationToString));
+elementDefinitionRanges.forEach((reference, id) => {
+  const referenceLocations = inputStore.references(
+    inputStore.getDocumentFromRange(reference)?.uri ?? "",
+    reference.start,
+    {
+      includeDeclaration: false,
+    },
+  );
+  console.debug("referenceLocations", referenceLocations?.map(locationToString));
+
+  referenceLocations?.forEach((referencePosition) => {
+    const definitionRanges = inputStore.findFullRangesFromPosition(
+      referencePosition.uri,
+      referencePosition.range.start,
+    );
+    // Find the surrounding fullRange on a range of type "definition"
+    console.debug(
+      "definitionRanges",
+      definitionRanges,
+      definitionRanges?.map((r) => inputStore.getLinkFromRange(r)),
+    );
+
+    const definitionRange = definitionRanges?.[0];
+    console.debug(`definitionRange around reference range`, definitionRange);
+
+    if (definitionRange === undefined || !DefinitionRange.is(definitionRange)) {
+      console.error(`ERROR: No definition range found for ${locationToString(referencePosition)}`);
+      return;
+    }
+
+    if (definitionRange === reference) {
+      // Skip self-references
+      return;
+    }
+
+    const moniker = inputStore.getMonikerFromRange(definitionRange);
+
+    if (moniker === undefined) {
+      console.error(
+        `ERROR: No moniker found for ${definitionRange.tag?.text} at ${inputStore.getLinkFromRange(
+          definitionRange,
+        )}`,
+      );
+      return;
+    }
+
+    const referenceId = monikerToFqn(moniker);
+
+    if (referenceId === id) {
+      // Skip self-references
+
+      // TODO: Skip imports without an error message
+
+      console.error(
+        `ERROR: Self-reference found for ${referenceId} from different ranges`,
+        reference,
+        inputStore.getLinkFromRange(reference),
+        definitionRange,
+        inputStore.getLinkFromRange(definitionRange),
+      );
+      return;
+    }
+
+    const newRelation: Relation = {
+      source: referenceId,
+      target: id,
+      tags: [RangeTagTypes.reference as Tag],
+      id: `${referenceId}_${RangeTagTypes.reference}_${id}` as RelationID,
+      title: humanize(RangeTagTypes.reference, true),
+    };
+    try {
+      model.addRelation(newRelation);
+    } catch (e) {
+      if (e instanceof InvalidModelError) {
+        if (e.message.includes("Source of relation not found")) {
+          addElement(model, {
+            description: "Unknown element added for relation to connect to",
+            links: [
+              inputStore.getLinkFromRange(definitionRange),
+              locationToString(referencePosition),
+            ],
+
+            kind: "widget" as ElementKind,
+            id: referenceId,
+            technology: null,
+            title:
+              definitionRange.tag?.text ??
+              titleize(underscore(moniker.identifier.split(":").pop() ?? "Unknown")),
+            tags: ["unknown" as Tag],
+          });
+          model.addRelation(newRelation);
+        }
+      }
+    }
+  });
+});
 
 console.debug("modelIndex as JSON", JSON.stringify(model, null, 2));
 

@@ -554,15 +554,26 @@ function processTypeDefinitionReferences(range: Range) {
 function processDefinitionRange(definitionRange: DefinitionRange) {
   const resultSetId = nextIndexOut[definitionRange.id as number][0]; // 497, 621
 
+  if (resultSetIdsProcessed.has(resultSetId)) {
+    console.warn(
+      `Already processed resultSetId ${resultSetId} referenced by definition range [${
+        definitionRange.id
+      }](${inputStore.getLinkFromRange(definitionRange)})`,
+    );
+    return;
+  }
+
+  resultSetIdsProcessed.add(resultSetId);
+
   // {"id":498,"type":"vertex","label":"moniker","scheme":"tsc","identifier":"lib/packages/items/FeatureFlags:Feature","unique":"workspace","kind":"export"}
   // TODO: Verify there is single element in array or handle multiple
-  console.debug("monikerIds", monikerIndexOut[resultSetId]);
+  console.debug("resultSetId", resultSetId, "monikerIds", monikerIndexOut[resultSetId]);
   console.debug(
     "monikers",
     monikerIndexOut[resultSetId].map((monikerId) => ({
       element: elements[monikerId],
       isMoniker: Moniker.is(elements[monikerId]),
-    }))
+    })),
   );
   const tscMonikers = monikerIndexOut[resultSetId]
     .map((monikerId) => elements[monikerId])
@@ -597,7 +608,8 @@ function processDefinitionRange(definitionRange: DefinitionRange) {
     kind: "widget" as ElementKind,
     id: newId,
     technology: "React component",
-    title: definitionRange.tag?.text ??
+    title:
+      definitionRange.tag?.text ??
       titleize(underscore(tscMoniker.identifier.split(":").pop() ?? "Unknown")),
     tags,
   });
@@ -611,8 +623,11 @@ await inputStore.load(argv.input.path, () => noopTransformer);
 // Process the model and add all React components to the model
 
 const elementDefinitionRanges = new Map<Fqn, DefinitionRange>();
+const resultSetIdsProcessed = new Set<number>();
 
-processTypeDefinitionReferences(componentTypeRanges.FunctionComponent);
+// Go through all widget types and find everything implementing them
+
+Object.values(componentTypeRanges).map(processTypeDefinitionReferences);
 
 // Add all the references between elements that were included in the model as relationships
 

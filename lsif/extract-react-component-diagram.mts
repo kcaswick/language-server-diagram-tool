@@ -171,14 +171,14 @@ export const modelIndexToDsl = (model: ModelIndex) => {
   indent++;
 
   const kinds = new Set(model.elements.map((el) => el.kind));
-  dsl.push(...[...kinds].map((kind) => `  element ${kind}`));
+  dsl.push(...[...kinds].sort().map((kind) => `  element ${kind}`));
 
   const tags = new Set(
     model.elements
       .flatMap((el) => el.tags ?? [])
       .concat(model.relations.flatMap((rel) => rel.tags ?? [])),
   );
-  dsl.push(...[...tags].map((tag) => `  tag ${tag}`));
+  dsl.push(...[...tags].sort().map((tag) => `  tag ${tag}`));
 
   indent--;
   dsl.push(`}`);
@@ -208,7 +208,7 @@ export const modelIndexToDsl = (model: ModelIndex) => {
     // TODO: Write the rest of the element properties, if present
 
     // Write child elements, if present
-    const children = model.children(el.id);
+    const children = model.children(el.id).sort((a, b) => a.id.localeCompare(b.id));
     if (children?.length > 0) {
       containerElements.push(el);
     }
@@ -227,9 +227,12 @@ export const modelIndexToDsl = (model: ModelIndex) => {
   };
 
   console.debug("model.rootElements()", model.rootElements());
-  model.rootElements().forEach((el) => {
-    dsl.push(...toElementDsl(el, model, indent));
-  });
+  model
+    .rootElements()
+    .sort((a, b) => a.id.localeCompare(b.id))
+    .forEach((el) => {
+      dsl.push(...toElementDsl(el, model, indent));
+    });
 
   dsl.push(
     ...model.relations.map(
@@ -243,6 +246,8 @@ export const modelIndexToDsl = (model: ModelIndex) => {
   indent--;
   dsl.push(`${" ".repeat(indent * indentSize)}}`);
   dsl.push(``);
+
+  const containerElementsSorted = containerElements.sort((a, b) => a.id.localeCompare(b.id));
 
   // Write views section, at least an index view at a minimum
   dsl.push(`views {`);
@@ -264,7 +269,9 @@ export const modelIndexToDsl = (model: ModelIndex) => {
     dsl.push(
       `${" ".repeat(indent * indentSize)}include ${["*"]
         .concat(
-          containerElements.filter((el) => el.tags?.includes(scopeTag)).map((el) => `${el.id}.*`),
+          containerElementsSorted
+            .filter((el) => el.tags?.includes(scopeTag))
+            .map((el) => `${el.id}.*`),
         )
         .join(", ")}`,
     );
@@ -276,9 +283,40 @@ export const modelIndexToDsl = (model: ModelIndex) => {
     indent--;
     dsl.push(`${" ".repeat(indent * indentSize)}}`);
     dsl.push(``);
+
+    dsl.push(`${" ".repeat(indent * indentSize)}view indexShallow {`);
+    indent++;
+    const minLevel = 2;
+    const maxLevel = 3;
+    dsl.push(
+      `${" ".repeat(indent * indentSize)}title 'Landscape (${
+        maxLevel - minLevel + 1
+      } levels of folders)'`,
+    );
+    dsl.push(
+      `${" ".repeat(indent * indentSize)}include ${["*"]
+        .concat(
+          containerElementsSorted
+            .filter((el) => el.tags?.includes(scopeTag))
+            .map((el) => `${el.id}.*`),
+        )
+        .join(", ")}`,
+    );
+    dsl.push(`${" ".repeat(indent * indentSize)}exclude element.tag = #${scopeTag}`);
+    dsl.push(`${" ".repeat(indent * indentSize)}include element.kind = package`);
+    dsl.push(
+      `${" ".repeat(indent * indentSize)}include ${[...Array(maxLevel - minLevel + 1).keys()]
+
+        .map((i) => `element.tag = #level-${i + minLevel}`)
+        .join(", ")}`,
+    );
+    dsl.push(`${" ".repeat(indent * indentSize)}exclude element.tag = #test`);
+    indent--;
+    dsl.push(`${" ".repeat(indent * indentSize)}}`);
+    dsl.push(``);
   }
 
-  containerElements.forEach((el) => {
+  containerElementsSorted.forEach((el) => {
     // Are there any containers we would not want a view of and should skip?
     dsl.push(
       `${" ".repeat(indent * indentSize)}view ${dasherize(

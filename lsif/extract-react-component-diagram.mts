@@ -106,13 +106,17 @@ export const addElementsForScopes = (
 
       addElement(model, {
         id: AsFqn(name, parent),
-        kind: (folderRegex.test(name) ? "folder" : "scope") as ElementKind,
-        title: titleize(underscore(name.replace(folderRegex, "Folder"))),
+        kind: (name.endsWith("Pkg")
+          ? "package"
+          : folderRegex.test(name)
+          ? "folder"
+          : "scope") as ElementKind,
+        title: titleize(underscore(name.replace("Pkg", "Package").replace(folderRegex, "Folder"))),
         description: parent
           .split(".")
           .concat(name)
-          .map((n) => n.replace(folderRegex, "/"))
-          .join(folderRegex.test(name) ? "" : "."),
+          .map((n) => n.replace("Pkg", ":").replace(folderRegex, "/"))
+          .join(name.endsWith("Pkg") || folderRegex.test(name) ? "" : "."),
         technology: null,
         tags,
         links: null,
@@ -326,6 +330,11 @@ export function monikerToFqn(moniker: Moniker, scopes: boolean) {
   const debug = true;
 
   let identifier = moniker.identifier.replace(/\.(?=[jt]sx?:)/, "_").replace(".", "_dot_");
+
+  if (moniker.scheme === "npm") {
+    identifier = identifier.replace(/@/g, "_at_").replace(/(?<=^[\w-]+):/, "_pkg.");
+  }
+
   if (scopes) {
     identifier = identifier.replace(folderRegex, "_dir.");
   }
@@ -582,7 +591,9 @@ function processDefinitionRange(definitionRange: DefinitionRange) {
     );
   }
 
-  const newId = monikerToFqn(tscMoniker, argv.scopes);
+  console.debug("getAlternateMonikers", inputStore.getAlternateMonikers(tscMoniker));
+
+  const newId = monikerToFqn(inputStore.getMostUniqueMoniker(tscMoniker), argv.scopes);
   const tags: [Tag, ...Tag[]] = ["widget" as Tag, "component" as Tag, "react" as Tag];
 
   if (testRegex.test(inputStore.getDocumentFromRange(definitionRange)?.uri ?? "")) {
@@ -664,7 +675,7 @@ elementDefinitionRanges.forEach((reference, id) => {
       return;
     }
 
-    const referenceId = monikerToFqn(moniker, argv.scopes);
+    const referenceId = monikerToFqn(inputStore.getMostUniqueMoniker(moniker), argv.scopes);
 
     if (referenceId === id) {
       // Skip self-references

@@ -2,9 +2,71 @@
 import * as lsp from "vscode-languageserver-protocol";
 
 import { JsonStore } from "./lsif-server-modules/jsonStore";
-import { DeclarationRange, DefinitionRange, Document, Range, RangeTagTypes, VertexLabels } from "lsif-protocol";
+import {
+  Document,
+  EdgeLabels,
+  Id,
+  ItemEdgeProperties,
+  Moniker,
+  Range,
+  RangeTagTypes,
+  Vertex,
+  VertexLabels,
+} from "lsif-protocol";
+import { monikerUniqueShortForms } from "lsif-sqlite/lib/compress";
+
+type In = JsonStore["in"] & {
+  attach: Map<Id, Moniker>;
+};
 
 export class JsonStoreEnhanced extends JsonStore {
+  protected get inEnhanced(): In {
+    return this["in"] as In;
+  }
+
+  private superDoProcessEdge: (
+    label: EdgeLabels,
+    outV: Id,
+    inV: Id,
+    property?: ItemEdgeProperties | undefined,
+  ) => void;
+
+  constructor() {
+    super();
+
+    this.inEnhanced.attach = new Map<Id, Moniker>();
+
+    this.superDoProcessEdge = this["doProcessEdge"];
+    this["doProcessEdge"] = this.myDoProcessEdge;
+  }
+
+  private myDoProcessEdge(
+    label: EdgeLabels,
+    outV: Id,
+    inV: Id,
+    property?: ItemEdgeProperties,
+  ): void {
+    super["doProcessEdge"](label, outV, inV, property);
+    const from: Vertex | undefined = this["vertices"].all.get(outV);
+    const to: Vertex | undefined = this["vertices"].all.get(inV);
+    if (from === undefined) {
+      throw new Error(`No vertex found for Id ${outV}`);
+    }
+
+    if (to === undefined) {
+      throw new Error(`No vertex found for Id ${inV}`);
+    }
+
+    switch (label) {
+      case EdgeLabels.attach:
+        this.inEnhanced.attach.set(to.id, from as Moniker);
+        break;
+
+      default:
+        break;
+    }
+  }
+
   public findFullRangesFromPosition(file: string, position: lsp.Position): Range[] | undefined {
     const value = this["indices"].documents.get(file);
     if (value === undefined) {
@@ -84,6 +146,30 @@ export class JsonStoreEnhanced extends JsonStore {
 
     const mostSpecificMoniker = this["getMostSpecificMoniker"](resultPath);
     return mostSpecificMoniker;
+  }
+
+  public getAlternateMonikers(moniker: Moniker) {
+    const results = [];
+    let nextMoniker: Moniker | undefined = moniker;
+    while ((nextMoniker = this.inEnhanced.attach.get(nextMoniker.id)) !== undefined) {
+      results.push(nextMoniker);
+    }
+
+    return results;
+  }
+
+  public getMostUniqueMoniker(moniker: Moniker) {
+    const alternateMonikers = this.getAlternateMonikers(moniker);
+    if (alternateMonikers.length === 0) {
+      return moniker;
+    }
+
+    const mostUniqueMoniker = alternateMonikers.reduce((a, b) =>
+      (monikerUniqueShortForms.get(a.unique) ?? -1) > (monikerUniqueShortForms.get(b.unique) ?? -1)
+        ? a
+        : b,
+    );
+    return mostUniqueMoniker;
   }
 }
 

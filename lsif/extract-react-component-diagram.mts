@@ -48,6 +48,14 @@ const folderRegex = /(?:Dir|_dir|\/|\\)(?:$|(?=.*:))/g;
 const scopeTag = "scope" as Tag;
 
 /**
+ * Regular expression used to match test files in a project.
+ * Matches files with names ending in `.test.js`, `.test.jsx`, `.spec.js`, `.spec.jsx`, `.test.ts`, `.test.tsx`, `.spec.ts`, or `.spec.tsx`.
+ * Also matches files located in a `__tests__` directory.
+ */
+const testRegex = /(?:\/__tests__\/.*?\/?[^/]*\.[jt]sx?)|(?:\/?([^/]*\.)+(spec|test)\.[jt]sx?)/;
+const testFolderRegex = /__tests__|Tests/;
+
+/**
  * Adds a new element to the given LikeC4 model index.
  * @param model - The model to add the element to.
  * @param element - The element to add to the model.
@@ -84,9 +92,16 @@ export const addElementsForScopes = (
   console.debug(`addElementsForScopes '${parent}'`, childEntries.length);
   for (const [name, child] of childEntries) {
     if (!child.el) {
-      const tags: [Tag, ...Tag[]] = [scopeTag];
+      const tags: [Tag, ...Tag[]] = [
+        scopeTag,
+        `level-${parent === "" ? 0 : parent.split(".").length}` as Tag,
+      ];
       if (Object.keys(child.children).length === 1) {
         tags.push("single-child" as Tag);
+      }
+
+      if (testFolderRegex.test(name)) {
+        tags.push("test" as Tag);
       }
 
       addElement(model, {
@@ -569,17 +584,22 @@ itemIndexOut[referenceResultId]?.references.forEach((referenceId) => {
     console.debug("tscMoniker", tscMoniker);
 
     const newId = monikerToFqn(tscMoniker, argv.scopes);
+    const tags: [Tag, ...Tag[]] = ["widget" as Tag, "component" as Tag, "react" as Tag];
+
+    if (testRegex.test(inputStore.getDocumentFromRange(definitionRange)?.uri ?? "")) {
+      tags.push("test" as Tag);
+    }
+
     addElement(model, {
       description: hoverToString(hover?.result) ?? "",
       links: null,
       kind: "widget" as ElementKind,
       id: newId,
       technology: "React component",
-      // TODO: Use shorter titles
       title:
         definitionRange.tag?.text ??
         titleize(underscore(tscMoniker.identifier.split(":").pop() ?? "Unknown")),
-      tags: ["widget" as Tag, "component" as Tag, "react" as Tag],
+      tags,
     });
     elementDefinitionRanges.set(newId, definitionRange);
   }
@@ -662,6 +682,12 @@ elementDefinitionRanges.forEach((reference, id) => {
     } catch (e) {
       if (e instanceof InvalidModelError) {
         if (e.message.includes("Source of relation not found")) {
+          const tags: [Tag, ...Tag[]] = ["unknown" as Tag];
+
+          if (testRegex.test(inputStore.getDocumentFromRange(definitionRange)?.uri ?? "")) {
+            tags.push("test" as Tag);
+          }
+
           addElement(model, {
             description: "Unknown element added for relation to connect to",
             links: [
@@ -675,7 +701,7 @@ elementDefinitionRanges.forEach((reference, id) => {
             title:
               definitionRange.tag?.text ??
               titleize(underscore(moniker.identifier.split(":").pop() ?? "Unknown")),
-            tags: ["unknown" as Tag],
+            tags,
           });
           model.addRelation(newRelation);
         }

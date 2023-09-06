@@ -1,7 +1,14 @@
 #!/usr/bin/env zx
 /* eslint-disable new-cap */
-import { AsFqn, InvalidModelError, ModelIndex } from "@likec4/core";
-import type { Element as C4Element, ElementKind, Fqn, Relation, RelationID, Tag } from "@likec4/core";
+import { AsFqn, InvalidModelError, ModelIndex, nameFromFqn, parentFqn } from "@likec4/core";
+import type {
+  Element as C4Element,
+  ElementKind,
+  Fqn,
+  Relation,
+  RelationID,
+  Tag,
+} from "@likec4/core";
 import { camelize, dasherize, humanize, titleize, underscore } from "inflection";
 import {
   DefinitionRange,
@@ -32,12 +39,73 @@ import { noopTransformer } from "./lsif-server-modules/database";
 import { JsonStoreEnhanced, locationToString } from "./jsonStoreEnhanced";
 
 /**
+ * Regular expression used to match folder names in a file path or moniker.
+ * Matches either "Dir", "_dir", "/", or "\" followed by the end of the string or a colon.
+ * @example "lib/packages/items/FeatureFlags:Feature" -> ["lib", "packages", "items"]
+ */
+const folderRegex = /(?:Dir|_dir|\/|\\)(?:$|(?=.*:))/g;
+
+const scopeTag = "scope" as Tag;
+
+/**
  * Adds a new element to the given LikeC4 model index.
  * @param model - The model to add the element to.
  * @param element - The element to add to the model.
  */
 export const addElement = (model: ModelIndex, element: C4Element) => {
   model.addElement(element);
+};
+
+/**
+ * Represents the trie data structure used internally by {@link ModelIndex} for storing elements.
+ */
+interface ElementTrie {
+  /**
+   * The LikeC4 element stored at this trie node.
+   */
+  el?: C4Element;
+  /**
+   * The children of this trie node, stored as a dictionary with the local name as strings and values as ElementTrie objects.
+   */
+  children: Record<string, ElementTrie>;
+}
+
+export const addElementsForScopes = (
+  model: ModelIndex,
+  parent: Fqn = "" as Fqn,
+  trie?: ElementTrie,
+): void => {
+  if (!trie) {
+    // eslint-disable-next-line dot-notation
+    trie = model["root"];
+  }
+
+  const childEntries = Object.entries<ElementTrie>(trie?.children ?? {});
+  console.debug(`addElementsForScopes '${parent}'`, childEntries.length);
+  for (const [name, child] of childEntries) {
+    if (!child.el) {
+      const tags: [Tag, ...Tag[]] = [scopeTag];
+      if (Object.keys(child.children).length === 1) {
+        tags.push("single-child" as Tag);
+      }
+
+      addElement(model, {
+        id: AsFqn(name, parent),
+        kind: (folderRegex.test(name) ? "folder" : "scope") as ElementKind,
+        title: titleize(underscore(name.replace(folderRegex, "Folder"))),
+        description: parent
+          .split(".")
+          .concat(name)
+          .map((n) => n.replace(folderRegex, "/"))
+          .join(folderRegex.test(name) ? "" : "."),
+        technology: null,
+        tags,
+        links: null,
+      });
+    }
+
+    addElementsForScopes(model, AsFqn(name, parent), child);
+  }
 };
 
 /**
@@ -105,7 +173,7 @@ export const modelIndexToDsl = (model: ModelIndex) => {
   const toElementDsl = (el: C4Element, model: ModelIndex, indent = 0) => {
     const isBlock = el.tags;
     const dsl = [
-      `${" ".repeat(indent * indentSize)}${el.id} = ${el.kind} '${el.title}'${
+      `${" ".repeat(indent * indentSize)}${nameFromFqn(el.id)} = ${el.kind} '${el.title}'${
         el.description || el.technology ? ` '${el.description}'` : ""
       }${el.technology ? ` '${el.technology}'` : ""}${isBlock ? " {" : ""}`,
     ];
@@ -170,9 +238,34 @@ export const modelIndexToDsl = (model: ModelIndex) => {
   dsl.push(`${" ".repeat(indent * indentSize)}}`);
   dsl.push(``);
 
+  if (argv.scopes) {
+    dsl.push(`${" ".repeat(indent * indentSize)}view indexFlat {`);
+    indent++;
+    dsl.push(`${" ".repeat(indent * indentSize)}title 'Landscape (flat)'`);
+    dsl.push(
+      `${" ".repeat(indent * indentSize)}include ${["*"]
+        .concat(
+          containerElements.filter((el) => el.tags?.includes(scopeTag)).map((el) => `${el.id}.*`),
+        )
+        .join(", ")}`,
+    );
+    dsl.push(
+      `${" ".repeat(
+        indent * indentSize,
+      )}exclude element.tag = #${scopeTag}\t// Comment this line to nest within scopes`,
+    );
+    indent--;
+    dsl.push(`${" ".repeat(indent * indentSize)}}`);
+    dsl.push(``);
+  }
+
   containerElements.forEach((el) => {
     // Are there any containers we would not want a view of and should skip?
-    dsl.push(`${" ".repeat(indent * indentSize)}view ${dasherize(el.title)} of ${el.id} {`);
+    dsl.push(
+      `${" ".repeat(indent * indentSize)}view ${dasherize(
+        (parentFqn(el.id) ?? "").replace(/\./g, "-") + el.title,
+      )} of ${el.id} {`,
+    );
     indent++;
 
     const viewType = (() => {
@@ -192,7 +285,9 @@ export const modelIndexToDsl = (model: ModelIndex) => {
       }
     })();
 
-    dsl.push(`${" ".repeat(indent * indentSize)}title '${el.title} - ${viewType}'`);
+    dsl.push(
+      `${" ".repeat(indent * indentSize)}title '${el.title}${viewType ? " - " : ""}${viewType}'`,
+    );
     dsl.push(`${" ".repeat(indent * indentSize)}include *`);
 
     indent--;
@@ -209,19 +304,33 @@ export const modelIndexToDsl = (model: ModelIndex) => {
 /**
  * Sanitizes a Moniker and converts it to a fully qualified name (FQN) string.
  * @param moniker The Moniker object to convert.
+ * @param scopes - Whether to preserve scope separations
  * @returns The FQN string.
  */
-export function monikerToFqn(moniker: Moniker) {
-  return AsFqn(
+export function monikerToFqn(moniker: Moniker, scopes: boolean) {
+  const debug = true;
+
+  let identifier = moniker.identifier.replace(/\.(?=[jt]sx?:)/, "_").replace(".", "_dot_");
+  if (scopes) {
+    identifier = identifier.replace(folderRegex, "_dir.");
+  }
+
+  if (debug) {
+    console.debug(`monikerToFqn ${moniker.identifier} -> ${identifier} (scopes: ${scopes}))`);
+  }
+
+  const fqn = AsFqn(
     moniker.identifier
-      ? camelize(moniker.identifier.replace(/\.(?=[jt]sx?:)/, "_"))
-          .replace(/:+/g, "_")
-          .replace(/[=+]/g, "_")
-          .replace(/^(\d)/, "_$1")
+      ? camelize(identifier, true).replace(/:+/g, "_").replace(/[=+]/g, "_").replace(/^(\d)/, "_$1")
       : typeof moniker.id === "number"
       ? `_${moniker.id}`
       : moniker.id,
   );
+  if (debug) {
+    console.debug(`monikerToFqn ${moniker.identifier} -> ${fqn}`);
+  }
+
+  return fqn;
 }
 
 export const readJsonl = async function* (
@@ -263,6 +372,11 @@ const argv = yargs(hideBin(process.argv))
         normalize: true,
         coerce: coerceFile,
       })
+      .option("scopes", {
+        default: true,
+        description: "Include scopes (e.g. folders, packages, etc.) as elements in the model.",
+        boolean: true,
+      })
       .option("stdin", {
         description: "Reads the LSIF from stdin.",
         boolean: true,
@@ -277,6 +391,7 @@ const argv = yargs(hideBin(process.argv))
   .alias("v", "version")
   .parseSync() as Arguments<{
   input: ReturnType<typeof coerceFile>;
+  scopes: boolean;
   stdin: boolean;
 }>;
 
@@ -453,7 +568,7 @@ itemIndexOut[referenceResultId]?.references.forEach((referenceId) => {
     const tscMoniker = tscMonikers[0];
     console.debug("tscMoniker", tscMoniker);
 
-    const newId = monikerToFqn(tscMoniker);
+    const newId = monikerToFqn(tscMoniker, argv.scopes);
     addElement(model, {
       description: hoverToString(hover?.result) ?? "",
       links: null,
@@ -518,7 +633,7 @@ elementDefinitionRanges.forEach((reference, id) => {
       return;
     }
 
-    const referenceId = monikerToFqn(moniker);
+    const referenceId = monikerToFqn(moniker, argv.scopes);
 
     if (referenceId === id) {
       // Skip self-references
@@ -568,6 +683,10 @@ elementDefinitionRanges.forEach((reference, id) => {
     }
   });
 });
+
+if (argv.scopes) {
+  addElementsForScopes(model);
+}
 
 console.debug("modelIndex as JSON", JSON.stringify(model, null, 2));
 

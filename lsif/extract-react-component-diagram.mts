@@ -508,6 +508,103 @@ for await (const line of argv.input.lines) {
   }
 }
 
+// #region Processing functions
+function processTypeDefinitionReferences(range: Range) {
+  // {"id":584,"type":"vertex","label":"range","start":{"line":545,"character":14},"end":{"line":545,"character":31},"tag":{"type":"definition","text":"FunctionComponent","kind":11,"fullRange":{"start":{"line":545,"character":4},"end":{"line":551,"character":5}}}}
+  const resultSetId = nextIndexOut[range.id as number][0]; // 581
+  const referenceResultId = textDocument_referencesIndexOut[resultSetId]; // 930
+  console.debug("referenceResultId", referenceResultId);
+
+  // TODO: Make this a function, and also apply it to the referenceResults for ClassComponent, PureComponent, and ComponentType
+  itemIndexOut[referenceResultId]?.references.forEach((referenceId) => {
+    // [588,645, 4261, 7043, 9735, 15832, 30761, 42710, 47293, 54658, 55255, 62295,62324, 77085, 79022, 99738]
+    const reference = elements[referenceId];
+    if (reference && Range.is(reference) && reference.tag?.type === RangeTagTypes.reference) {
+      console.debug("inner reference", inputStore.getLinkFromRange(reference), reference);
+
+      // Find the surrounding fullRange on a range of type "definition"
+      const definitionRanges = inputStore.findFullRangesFromPosition(
+        inputStore.getDocumentFromRange(reference)?.uri ?? "",
+        reference.start
+      );
+      console.debug(
+        "definitionRanges",
+        definitionRanges,
+        definitionRanges?.map((r) => inputStore.getLinkFromRange(r))
+      );
+
+      // {"id":503,"type":"vertex","label":"range","start":{"line":32,"character":13},"end":{"line":32,"character":20},"tag":{"type":"definition","text":"Feature","kind":7,"fullRange":{"start":{"line":32,"character":13},"end":{"line":34,"character":19}}}}
+      const definitionRange = definitionRanges?.[0];
+      console.debug(`definitionRange for inner reference`, definitionRange);
+
+      if (definitionRange === undefined || !DefinitionRange.is(definitionRange)) {
+        console.error(
+          `ERROR: No definition range found for ${reference.tag?.type}`,
+          reference.tag?.text,
+          `at ${reference.start.line}:${reference.start.character}`
+        );
+        return;
+      }
+
+      processDefinitionRange(definitionRange);
+    }
+  });
+}
+
+function processDefinitionRange(definitionRange: DefinitionRange) {
+  const resultSetId = nextIndexOut[definitionRange.id as number][0]; // 497, 621
+
+  // {"id":498,"type":"vertex","label":"moniker","scheme":"tsc","identifier":"lib/packages/items/FeatureFlags:Feature","unique":"workspace","kind":"export"}
+  // TODO: Verify there is single element in array or handle multiple
+  console.debug("monikerIds", monikerIndexOut[resultSetId]);
+  console.debug(
+    "monikers",
+    monikerIndexOut[resultSetId].map((monikerId) => ({
+      element: elements[monikerId],
+      isMoniker: Moniker.is(elements[monikerId]),
+    }))
+  );
+  const tscMonikers = monikerIndexOut[resultSetId]
+    .map((monikerId) => elements[monikerId])
+    .filter(
+      (moniker) =>
+        (moniker as Vertex).label === VertexLabels.moniker &&
+        (moniker as Moniker)?.scheme === "tsc",
+    ) as Moniker[];
+  if (tscMonikers.length !== 1) {
+    throw new Error(`Expected a single tsc moniker but found ${JSON.stringify(tscMonikers)}`);
+  }
+
+  const hoverIDs = outIndex.get(resultSetId)?.get(EdgeLabels.textDocument_hover);
+  console.debug("hoverIDs", hoverIDs);
+  const hoverID = hoverIDs?.[0];
+  console.debug("hoverID", hoverID);
+  const hover = elements[hoverID as number] as HoverResult;
+
+  const tscMoniker = tscMonikers[0];
+  console.debug("tscMoniker", tscMoniker);
+
+  const newId = monikerToFqn(tscMoniker, argv.scopes);
+  const tags: [Tag, ...Tag[]] = ["widget" as Tag, "component" as Tag, "react" as Tag];
+
+  if (testRegex.test(inputStore.getDocumentFromRange(definitionRange)?.uri ?? "")) {
+    tags.push("test" as Tag);
+  }
+
+  addElement(model, {
+    description: hoverToString(hover?.result) ?? "",
+    links: null,
+    kind: "widget" as ElementKind,
+    id: newId,
+    technology: "React component",
+    title: definitionRange.tag?.text ??
+      titleize(underscore(tscMoniker.identifier.split(":").pop() ?? "Unknown")),
+    tags,
+  });
+  elementDefinitionRanges.set(newId, definitionRange);
+}
+// #endregion Processing functions
+
 const inputStore = new JsonStoreEnhanced();
 await inputStore.load(argv.input.path, () => noopTransformer);
 
@@ -515,95 +612,7 @@ await inputStore.load(argv.input.path, () => noopTransformer);
 
 const elementDefinitionRanges = new Map<Fqn, DefinitionRange>();
 
-// {"id":584,"type":"vertex","label":"range","start":{"line":545,"character":14},"end":{"line":545,"character":31},"tag":{"type":"definition","text":"FunctionComponent","kind":11,"fullRange":{"start":{"line":545,"character":4},"end":{"line":551,"character":5}}}}
-const resultSetId = nextIndexOut[componentTypeRanges.FunctionComponent.id as number][0]; // 581
-const referenceResultId = textDocument_referencesIndexOut[resultSetId]; // 930
-console.debug("referenceResultId", referenceResultId);
-
-// TODO: Make this a function, and also apply it to the referenceResults for ClassComponent, PureComponent, and ComponentType
-itemIndexOut[referenceResultId]?.references.forEach((referenceId) => {
-  // [588,645, 4261, 7043, 9735, 15832, 30761, 42710, 47293, 54658, 55255, 62295,62324, 77085, 79022, 99738]
-  const reference = elements[referenceId];
-  if (reference && Range.is(reference) && reference.tag?.type === RangeTagTypes.reference) {
-    console.debug("inner reference", inputStore.getLinkFromRange(reference), reference);
-
-    // Find the surrounding fullRange on a range of type "definition"
-    const definitionRanges = inputStore.findFullRangesFromPosition(
-      inputStore.getDocumentFromRange(reference)?.uri ?? "",
-      reference.start,
-    );
-    console.debug(
-      "definitionRanges",
-      definitionRanges,
-      definitionRanges?.map((r) => inputStore.getLinkFromRange(r)),
-    );
-
-    // {"id":503,"type":"vertex","label":"range","start":{"line":32,"character":13},"end":{"line":32,"character":20},"tag":{"type":"definition","text":"Feature","kind":7,"fullRange":{"start":{"line":32,"character":13},"end":{"line":34,"character":19}}}}
-    const definitionRange = definitionRanges?.[0];
-    console.debug(`definitionRange for inner reference`, definitionRange);
-
-    if (definitionRange === undefined || !DefinitionRange.is(definitionRange)) {
-      console.error(
-        `ERROR: No definition range found for ${reference.tag?.type}`,
-        reference.tag?.text,
-        `at ${reference.start.line}:${reference.start.character}`,
-      );
-      return;
-    }
-
-    const resultSetId = nextIndexOut[definitionRange.id as number][0]; // 497, 621
-
-    // {"id":498,"type":"vertex","label":"moniker","scheme":"tsc","identifier":"lib/packages/items/FeatureFlags:Feature","unique":"workspace","kind":"export"}
-    // TODO: Verify there is single element in array or handle multiple
-    console.debug("monikerIds", monikerIndexOut[resultSetId]);
-    console.debug(
-      "monikers",
-      monikerIndexOut[resultSetId].map((monikerId) => ({
-        element: elements[monikerId],
-        isMoniker: Moniker.is(elements[monikerId]),
-      })),
-    );
-    const tscMonikers = monikerIndexOut[resultSetId]
-      .map((monikerId) => elements[monikerId])
-      .filter(
-        (moniker) =>
-          (moniker as Vertex).label === VertexLabels.moniker &&
-          (moniker as Moniker)?.scheme === "tsc",
-      ) as Moniker[];
-    if (tscMonikers.length !== 1) {
-      throw new Error(`Expected a single tsc moniker but found ${JSON.stringify(tscMonikers)}`);
-    }
-
-    const hoverIDs = outIndex.get(resultSetId)?.get(EdgeLabels.textDocument_hover);
-    console.debug("hoverIDs", hoverIDs);
-    const hoverID = hoverIDs?.[0];
-    console.debug("hoverID", hoverID);
-    const hover = elements[hoverID as number] as HoverResult;
-
-    const tscMoniker = tscMonikers[0];
-    console.debug("tscMoniker", tscMoniker);
-
-    const newId = monikerToFqn(tscMoniker, argv.scopes);
-    const tags: [Tag, ...Tag[]] = ["widget" as Tag, "component" as Tag, "react" as Tag];
-
-    if (testRegex.test(inputStore.getDocumentFromRange(definitionRange)?.uri ?? "")) {
-      tags.push("test" as Tag);
-    }
-
-    addElement(model, {
-      description: hoverToString(hover?.result) ?? "",
-      links: null,
-      kind: "widget" as ElementKind,
-      id: newId,
-      technology: "React component",
-      title:
-        definitionRange.tag?.text ??
-        titleize(underscore(tscMoniker.identifier.split(":").pop() ?? "Unknown")),
-      tags,
-    });
-    elementDefinitionRanges.set(newId, definitionRange);
-  }
-});
+processTypeDefinitionReferences(componentTypeRanges.FunctionComponent);
 
 // Add all the references between elements that were included in the model as relationships
 
@@ -720,5 +729,7 @@ console.debug(
   "elements and relations as JSON",
   JSON.stringify({ elements: model.elements, relations: model.relations }, null, 2),
 );
+
+// Output the model
 
 console.log("\nLikeC4 DSL\n", modelIndexToDsl(model));

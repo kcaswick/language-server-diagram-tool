@@ -69,6 +69,15 @@ export class JsonStoreEnhanced extends JsonStore {
 
   public getMonikerFromRange(range: Range) {
     const resultPath = this["getResultPath"](range.id, this["out"].references);
+    // Debugging disabled- console.debug(
+    //   "resultPath.path",
+    //   resultPath.path.map(
+    //     (p) =>
+    //       `vertex: ${p.vertex} -> moniker: #${p.moniker?.id} scheme: ${p.moniker?.scheme} '${p.moniker?.identifier}' kind: ${p.moniker?.kind} unique: ${p.moniker?.unique}`,
+    //   ),
+    //   "resultPath.result",
+    //   resultPath.result,
+    // );
     if (resultPath.result === undefined) {
       return;
     }

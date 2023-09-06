@@ -564,27 +564,7 @@ function processDefinitionRange(definitionRange: DefinitionRange) {
   }
 
   resultSetIdsProcessed.add(resultSetId);
-
-  // {"id":498,"type":"vertex","label":"moniker","scheme":"tsc","identifier":"lib/packages/items/FeatureFlags:Feature","unique":"workspace","kind":"export"}
-  // TODO: Verify there is single element in array or handle multiple
-  console.debug("resultSetId", resultSetId, "monikerIds", monikerIndexOut[resultSetId]);
-  console.debug(
-    "monikers",
-    monikerIndexOut[resultSetId].map((monikerId) => ({
-      element: elements[monikerId],
-      isMoniker: Moniker.is(elements[monikerId]),
-    })),
-  );
-  const tscMonikers = monikerIndexOut[resultSetId]
-    .map((monikerId) => elements[monikerId])
-    .filter(
-      (moniker) =>
-        (moniker as Vertex).label === VertexLabels.moniker &&
-        (moniker as Moniker)?.scheme === "tsc",
-    ) as Moniker[];
-  if (tscMonikers.length !== 1) {
-    throw new Error(`Expected a single tsc moniker but found ${JSON.stringify(tscMonikers)}`);
-  }
+  console.debug("processDefinitionRange resultSetId", resultSetId);
 
   const hoverIDs = outIndex.get(resultSetId)?.get(EdgeLabels.textDocument_hover);
   console.debug("hoverIDs", hoverIDs);
@@ -592,8 +572,15 @@ function processDefinitionRange(definitionRange: DefinitionRange) {
   console.debug("hoverID", hoverID);
   const hover = elements[hoverID as number] as HoverResult;
 
-  const tscMoniker = tscMonikers[0];
+  const tscMoniker = inputStore.getMonikerFromRange(definitionRange);
   console.debug("tscMoniker", tscMoniker);
+  if (tscMoniker === undefined) {
+    throw new Error(
+      `Expected a tsc moniker for [${definitionRange.id}](${inputStore.getLinkFromRange(
+        definitionRange,
+      )})`,
+    );
+  }
 
   const newId = monikerToFqn(tscMoniker, argv.scopes);
   const tags: [Tag, ...Tag[]] = ["widget" as Tag, "component" as Tag, "react" as Tag];

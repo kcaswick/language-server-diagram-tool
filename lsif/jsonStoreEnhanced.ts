@@ -17,6 +17,7 @@ import { monikerUniqueShortForms } from "lsif-sqlite/lib/compress";
 
 type In = JsonStore["in"] & {
   attach: Map<Id, Moniker>;
+  next: Map<Id, Vertex[]>;
 };
 
 export class JsonStoreEnhanced extends JsonStore {
@@ -35,12 +36,13 @@ export class JsonStoreEnhanced extends JsonStore {
     super();
 
     this.inEnhanced.attach = new Map<Id, Moniker>();
+    this.inEnhanced.next = new Map();
 
     this.superDoProcessEdge = this["doProcessEdge"];
-    this["doProcessEdge"] = this.myDoProcessEdge;
+    this["doProcessEdge"] = this.doProcessEdgeEnhanced;
   }
 
-  private myDoProcessEdge(
+  private doProcessEdgeEnhanced(
     label: EdgeLabels,
     outV: Id,
     inV: Id,
@@ -57,9 +59,20 @@ export class JsonStoreEnhanced extends JsonStore {
       throw new Error(`No vertex found for Id ${inV}`);
     }
 
+    let values: Vertex[] | undefined;
     switch (label) {
       case EdgeLabels.attach:
         this.inEnhanced.attach.set(to.id, from as Moniker);
+        break;
+
+      case EdgeLabels.next:
+        values = this.inEnhanced.next.get(to.id);
+        if (values === undefined) {
+          values = [];
+          this.inEnhanced.next.set(to.id, values);
+        }
+
+        values.push(from);
         break;
 
       default:
@@ -149,13 +162,45 @@ export class JsonStoreEnhanced extends JsonStore {
   }
 
   public getAlternateMonikers(moniker: Moniker) {
-    const results = [];
+    const results: Moniker[] = [];
+    this.followAttachEdges(moniker, results);
+
+    // Check for additional resultSets
+    const resultSets = this["in"].moniker.get(moniker.id);
+    // Disable debug output - console.debug("resultSets", resultSets);
+    const resultSetFilter = (v: Vertex): boolean => v.label === VertexLabels.resultSet;
+    resultSets?.forEach((resultSet) => {
+      const nextResultSets = (this.inEnhanced.next.get(resultSet.id) ?? []).filter(resultSetFilter);
+      // Disable debug output - console.debug("nextResultSets", nextResultSets);
+      while (nextResultSets.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- We just checked the array has elements above
+        const nextResultSet = nextResultSets.pop()!;
+        if (nextResultSet.label !== VertexLabels.resultSet) {
+          continue;
+        }
+
+        const moniker = this["out"].moniker.get(nextResultSet.id);
+        // Disable debug output - console.debug("moniker", moniker);
+        if (moniker !== undefined) {
+          results.push(moniker);
+          this.followAttachEdges(moniker, results);
+        }
+
+        nextResultSets.push(
+          ...(this.inEnhanced.next.get(nextResultSet.id) ?? []).filter(resultSetFilter),
+        );
+        // Disable debug output - console.debug("nextResultSets after push", nextResultSets);
+      }
+    });
+
+    return results;
+  }
+
+  protected followAttachEdges(moniker: Moniker, results: Moniker[]) {
     let nextMoniker: Moniker | undefined = moniker;
     while ((nextMoniker = this.inEnhanced.attach.get(nextMoniker.id)) !== undefined) {
       results.push(nextMoniker);
     }
-
-    return results;
   }
 
   public getMostUniqueMoniker(moniker: Moniker) {

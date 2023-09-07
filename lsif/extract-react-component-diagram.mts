@@ -20,6 +20,7 @@ import {
   Moniker,
   Range,
   RangeTagTypes,
+  UniquenessLevel,
   Vertex,
   VertexLabels,
   item,
@@ -28,6 +29,7 @@ import {
   textDocument_hover,
   textDocument_references,
 } from "lsif-protocol";
+import path from "node:path";
 import readline from "readline";
 import { A, M } from "ts-toolbelt";
 import { Hover, MarkupContent, MarkedString } from "vscode-languageserver-protocol";
@@ -141,6 +143,28 @@ export const addElementsForScopes = (
  */
 function getNameFromValue(enumObject: Record<string, number>, value: number) {
   return Object.entries(enumObject).find((entry) => entry[1] === value)?.[0];
+}
+
+/**
+ * Returns the relative URL of a given URI with respect to the workspace root URL.
+ * If the URI is not within the workspace root, the URI is returned as-is.
+ * @param uri - The URI to get the relative URL for.
+ * @param workspaceRoot - The workspace root URL.
+ * @returns The relative URL of the given URI with respect to the workspace root URL.
+ */
+function getRelativeUrl(uri: string, workspaceRoot: URL) {
+  // Note: workspaceRoot.href does not include the trailing slash
+  if (uri.startsWith(workspaceRoot.href)) {
+    return uri.substring(workspaceRoot.href.length + 1);
+  }
+
+  const url = new URL(uri);
+  if (url.protocol === workspaceRoot.protocol && url.host === workspaceRoot.host) {
+    const pathname = path.relative(workspaceRoot.pathname, url.pathname);
+    return pathname;
+  }
+
+  return uri;
 }
 
 /**
@@ -392,10 +416,34 @@ export const modelIndexToDsl = (model: ModelIndex) => {
 export function monikerToFqn(moniker: Moniker, scopes: boolean) {
   const debug = true;
 
-  let identifier = moniker.identifier.replace(/\.(?=[jt]sx?:)/, "_").replace(".", "_dot_");
+  // Strip extensions and periods from the identifier
+  const stripExtensions = (identifier: string) =>
+    identifier.replace(/\.(?=[jt]sx?:)/, "_").replace(".", "_dot_");
+
+  let identifier = stripExtensions(moniker.identifier);
 
   if (moniker.scheme === "npm") {
     identifier = identifier.replace(/@/g, "_at_").replace(/(?<=^[\w@/\\-]+):/, "_pkg.");
+  } else if (
+    moniker.unique !== UniquenessLevel.scheme &&
+    moniker.unique !== UniquenessLevel.global
+  ) {
+    // Prefix identifier with project and document
+    const containers = inputStore.getContainersForMoniker(moniker);
+    if (containers === undefined) {
+      throw new Error(`No containers found for moniker ${moniker.identifier}`);
+    }
+
+    identifier = `${
+      containers.project?.name ? containers.project.name + "_proj." : ""
+    }${stripExtensions(
+      `${
+        // Get document path relative to workspace root
+        containers.document && containers.workspace
+          ? getRelativeUrl(containers.document.uri, containers.workspace)
+          : containers.document?.uri ?? ""
+      }:`,
+    )}${identifier}`;
   }
 
   if (scopes) {

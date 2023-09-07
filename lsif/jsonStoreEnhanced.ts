@@ -8,6 +8,7 @@ import {
   Id,
   ItemEdgeProperties,
   Moniker,
+  Project,
   Range,
   RangeTagTypes,
   Vertex,
@@ -19,6 +20,12 @@ type In = JsonStore["in"] & {
   attach: Map<Id, Moniker>;
   next: Map<Id, Vertex[]>;
 };
+
+export interface IVertexContainers {
+  document: Document;
+  project: Project;
+  workspace: URL;
+}
 
 export class JsonStoreEnhanced extends JsonStore {
   protected get inEnhanced(): In {
@@ -201,6 +208,53 @@ export class JsonStoreEnhanced extends JsonStore {
     while ((nextMoniker = this.inEnhanced.attach.get(nextMoniker.id)) !== undefined) {
       results.push(nextMoniker);
     }
+  }
+
+  public getContainersForMoniker(moniker: Moniker) {
+    const containers: Partial<IVertexContainers> = {
+      workspace: this.getWorkspaceRoot(),
+    };
+    const vertices = this["findVerticesForMoniker"]({ key: "", ...moniker });
+    // Debugging disabled-
+    // console.debug("vertices", vertices);
+    if (vertices === undefined) {
+      return;
+    }
+
+    vertices.forEach((vertex) => {
+      const resultPath = this["getResultPath"](vertex.id, this.inEnhanced.next);
+      // Debugging disabled-
+      // console.debug(
+      //   `getContainersForMoniker '${moniker.identifier}' vertex`,
+      //   vertex,
+      //   "resultPath.path",
+      //   resultPath.path.map(
+      //     (p) =>
+      //       `vertex: ${p.vertex} -> moniker: #${p.moniker?.id} scheme: ${p.moniker?.scheme} '${p.moniker?.identifier}' kind: ${p.moniker?.kind} unique: ${p.moniker?.unique}`,
+      //   ),
+      //   "resultPath.result",
+      //   resultPath.result,
+      // );
+      if (resultPath.result === undefined) {
+        return;
+      }
+
+      if (Range.is(resultPath.result.value[0])) {
+        containers.document = this.getDocumentFromRange(resultPath.result.value[0]);
+        if (containers.document !== undefined) {
+          containers.project = this["in"].contains.get(containers.document.id) as Project;
+        }
+
+        // Debugging disabled-
+        // console.debug("containers", {
+        //   document: String(containers.document?.uri),
+        //   project: String(containers.project?.name),
+        //   workspace: String(containers.workspace?.href),
+        // });
+      }
+    });
+
+    return containers;
   }
 
   public getMostUniqueMoniker(moniker: Moniker) {

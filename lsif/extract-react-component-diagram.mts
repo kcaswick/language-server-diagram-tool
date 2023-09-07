@@ -115,7 +115,12 @@ export const addElementsForScopes = (
         description: parent
           .split(".")
           .concat(name)
-          .map((n) => n.replace("Pkg", ":").replace(folderRegex, "/"))
+          .map((n) =>
+            n
+              .replace("Pkg", ":")
+              .replace(/(?<=^|[/\\])At(?!\p{Lower})/gu, "@")
+              .replace(folderRegex, "/"),
+          )
           .join(name.endsWith("Pkg") || folderRegex.test(name) ? "" : "."),
         technology: null,
         tags,
@@ -370,7 +375,7 @@ export function monikerToFqn(moniker: Moniker, scopes: boolean) {
   let identifier = moniker.identifier.replace(/\.(?=[jt]sx?:)/, "_").replace(".", "_dot_");
 
   if (moniker.scheme === "npm") {
-    identifier = identifier.replace(/@/g, "_at_").replace(/(?<=^[\w-]+):/, "_pkg.");
+    identifier = identifier.replace(/@/g, "_at_").replace(/(?<=^[\w@/\\-]+):/, "_pkg.");
   }
 
   if (scopes) {

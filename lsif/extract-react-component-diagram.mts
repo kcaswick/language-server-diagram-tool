@@ -620,17 +620,24 @@ function processTypeDefinitionReferences(range: Range, tags: [Tag, ...Tag[]]) {
         return;
       }
 
-      processDefinitionRange(definitionRange, "widget" as ElementKind, tags, "React component");
+      processDefinitionRange(definitionRange, {
+        kind: "widget" as ElementKind,
+        tags,
+        technology: "React component",
+      });
     }
   });
 }
 
 function processDefinitionRange(
   definitionRange: DefinitionRange,
-  kind: ElementKind,
-  tags: [Tag, ...Tag[]],
-  technology: string | null,
-) {
+  {
+    kind,
+    tags,
+    technology,
+  }: { kind: ElementKind; tags: [Tag, ...Tag[]]; technology: string | null },
+  { defaultDescription }: { defaultDescription: string | null } = { defaultDescription: null },
+): boolean {
   const resultSetId = nextIndexOut[definitionRange.id as number][0]; // 497, 621
 
   if (resultSetIdsProcessed.has(resultSetId)) {
@@ -639,7 +646,7 @@ function processDefinitionRange(
         definitionRange.id
       }](${inputStore.getLinkFromRange(definitionRange)})`,
     );
-    return;
+    return true;
   }
 
   resultSetIdsProcessed.add(resultSetId);
@@ -669,9 +676,10 @@ function processDefinitionRange(
     tags.push("test" as Tag);
   }
 
+  const hoverText = hoverToString(hover?.result);
   addElement(model, {
-    description: hoverToString(hover?.result) ?? "",
-    links: null,
+    description: hoverText && hoverText !== "" ? hoverText : defaultDescription ?? "",
+    links: [inputStore.getLinkFromRange(definitionRange)],
     kind,
     id: newId,
     technology: technology ?? null,
@@ -681,6 +689,7 @@ function processDefinitionRange(
     tags,
   });
   elementDefinitionRanges.set(newId, definitionRange);
+  return true;
 }
 // #endregion Processing functions
 
@@ -726,12 +735,11 @@ inputStore.getDocumentInfos().forEach((docInfo) => {
     }
 
     const kindName = underscore(getSymbolKindName(symbol.kind) ?? "document-symbol");
-    processDefinitionRange(
-      definitionRange,
-      dasherize(kindName) as ElementKind,
-      ["document-symbol" as Tag],
-      titleize(kindName),
-    );
+    processDefinitionRange(definitionRange, {
+      kind: dasherize(kindName) as ElementKind,
+      tags: ["document-symbol" as Tag],
+      technology: titleize(kindName),
+    });
   });
 });
 
@@ -763,7 +771,10 @@ elementDefinitionRanges.forEach((reference, id) => {
     console.debug(`definitionRange around reference range`, definitionRange);
 
     if (definitionRange === undefined || !DefinitionRange.is(definitionRange)) {
-      console.error(`ERROR: No definition range found for ${locationToString(referencePosition)}`);
+      console.error(
+        `ERROR: No definition range found for reference to ${id} "${reference.tag
+          ?.text}" at ${locationToString(referencePosition)}`,
+      );
       return;
     }
 
@@ -818,21 +829,39 @@ elementDefinitionRanges.forEach((reference, id) => {
             tags.push("test" as Tag);
           }
 
-          addElement(model, {
-            description: "Unknown element added for relation to connect to",
-            links: [
-              inputStore.getLinkFromRange(definitionRange),
-              locationToString(referencePosition),
-            ],
+          const kindName = underscore(getSymbolKindName(definitionRange.tag.kind) ?? "unknown");
+          const description = `Unknown element added for relation to ${id} "${reference.tag?.text}" to connect from`;
 
-            kind: "widget" as ElementKind,
-            id: referenceId,
-            technology: null,
-            title:
-              definitionRange.tag?.text ??
-              titleize(underscore(moniker.identifier.split(":").pop() ?? "Unknown")),
-            tags,
-          });
+          if (
+            !processDefinitionRange(
+              definitionRange,
+              {
+                kind: dasherize(kindName) as ElementKind,
+                tags,
+                technology: kindName === "unknown" ? null : titleize(kindName),
+              },
+              {
+                defaultDescription: description,
+              },
+            )
+          ) {
+            addElement(model, {
+              description,
+              links: [
+                inputStore.getLinkFromRange(definitionRange),
+                locationToString(referencePosition),
+              ],
+
+              kind: "unknown" as ElementKind,
+              id: referenceId,
+              technology: null,
+              title:
+                definitionRange.tag?.text ??
+                titleize(underscore(moniker.identifier.split(":").pop() ?? "Unknown")),
+              tags,
+            });
+          }
+
           model.addRelation(newRelation);
         }
       }

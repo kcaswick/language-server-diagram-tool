@@ -36,7 +36,8 @@ import { hideBin } from "yargs/helpers";
 import { $, fs } from "zx";
 
 import { noopTransformer } from "./lsif-server-modules/database";
-import { JsonStoreEnhanced, locationToString } from "./jsonStoreEnhanced";
+import { JsonStoreEnhanced, locationToLink, locationToString } from "./jsonStoreEnhanced";
+import { SymbolKind } from "vscode-languageserver";
 
 /**
  * Regular expression used to match folder names in a file path or moniker.
@@ -131,6 +132,25 @@ export const addElementsForScopes = (
     addElementsForScopes(model, AsFqn(name, parent), child);
   }
 };
+
+/**
+ * Get the name of the enum value from the given enum object.
+ * @param enumObject - The enum object to search.
+ * @param value - The value to find the name of.
+ * @returns The name of the enum value, or undefined if not found.
+ */
+function getNameFromValue(enumObject: Record<string, number>, value: number) {
+  return Object.entries(enumObject).find((entry) => entry[1] === value)?.[0];
+}
+
+/**
+ * Get the name of the given symbol kind.
+ * @param kind The symbol kind to get the name of.
+ * @returns The name of the symbol kind, or undefined if the kind is not recognized.
+ */
+function getSymbolKindName(kind: SymbolKind): string | undefined {
+  return getNameFromValue(SymbolKind, kind);
+}
 
 /**
  * Converts a Hover object to a string representation of the documentation.
@@ -488,6 +508,8 @@ for await (const line of argv.input.lines) {
         componentTypeRanges.PureComponent = line;
       } else if (line.tag.text === "ComponentType") {
         componentTypeRanges.ComponentType = line;
+      } else if (line.tag.text === "Component") {
+        componentTypeRanges.Component = line;
       }
     } else if (moniker.is(line)) {
       if (monikerIndexIn[line.inV as number]) {
@@ -561,7 +583,7 @@ for await (const line of argv.input.lines) {
 }
 
 // #region Processing functions
-function processTypeDefinitionReferences(range: Range) {
+function processTypeDefinitionReferences(range: Range, tags: [Tag, ...Tag[]]) {
   // {"id":584,"type":"vertex","label":"range","start":{"line":545,"character":14},"end":{"line":545,"character":31},"tag":{"type":"definition","text":"FunctionComponent","kind":11,"fullRange":{"start":{"line":545,"character":4},"end":{"line":551,"character":5}}}}
   const resultSetId = nextIndexOut[range.id as number][0]; // 581
   const referenceResultId = textDocument_referencesIndexOut[resultSetId]; // 930
@@ -598,12 +620,17 @@ function processTypeDefinitionReferences(range: Range) {
         return;
       }
 
-      processDefinitionRange(definitionRange);
+      processDefinitionRange(definitionRange, "widget" as ElementKind, tags, "React component");
     }
   });
 }
 
-function processDefinitionRange(definitionRange: DefinitionRange) {
+function processDefinitionRange(
+  definitionRange: DefinitionRange,
+  kind: ElementKind,
+  tags: [Tag, ...Tag[]],
+  technology: string | null,
+) {
   const resultSetId = nextIndexOut[definitionRange.id as number][0]; // 497, 621
 
   if (resultSetIdsProcessed.has(resultSetId)) {
@@ -637,7 +664,6 @@ function processDefinitionRange(definitionRange: DefinitionRange) {
   console.debug("getAlternateMonikers", inputStore.getAlternateMonikers(tscMoniker));
 
   const newId = monikerToFqn(inputStore.getMostUniqueMoniker(tscMoniker), argv.scopes);
-  const tags: [Tag, ...Tag[]] = ["widget" as Tag, "component" as Tag, "react" as Tag];
 
   if (testRegex.test(inputStore.getDocumentFromRange(definitionRange)?.uri ?? "")) {
     tags.push("test" as Tag);
@@ -646,9 +672,9 @@ function processDefinitionRange(definitionRange: DefinitionRange) {
   addElement(model, {
     description: hoverToString(hover?.result) ?? "",
     links: null,
-    kind: "widget" as ElementKind,
+    kind,
     id: newId,
-    technology: "React component",
+    technology: technology ?? null,
     title:
       definitionRange.tag?.text ??
       titleize(underscore(tscMoniker.identifier.split(":").pop() ?? "Unknown")),
@@ -668,7 +694,46 @@ const resultSetIdsProcessed = new Set<number>();
 
 // Go through all widget types and find everything implementing them
 
-Object.values(componentTypeRanges).map(processTypeDefinitionReferences);
+Object.values(componentTypeRanges).map((r) =>
+  processTypeDefinitionReferences(r, ["widget" as Tag, "component" as Tag, "react" as Tag]),
+);
+
+// Add all remaining elements to the model
+inputStore.getDocumentInfos().forEach((docInfo) => {
+  // TODO: Add documents themselves
+
+  inputStore.documentSymbols(docInfo.uri)?.forEach((symbol) => {
+    const symbolLink = locationToLink({ uri: docInfo.uri, range: symbol.range });
+    console.debug("document symbol", symbol, symbolLink);
+    const definitionRanges = inputStore.findFullRangesFromPosition(docInfo.uri, symbol.range.start);
+
+    console.debug(
+      "definitionRanges",
+      definitionRanges,
+      definitionRanges?.map((r) => inputStore.getLinkFromRange(r)),
+    );
+
+    const definitionRange = definitionRanges?.[0];
+    console.debug(`definitionRange for document symbol`, definitionRange);
+
+    if (definitionRange === undefined || !DefinitionRange.is(definitionRange)) {
+      console.error(
+        `ERROR: No definition range found for document symbol`,
+        symbol.name,
+        `at ${symbolLink}`,
+      );
+      return;
+    }
+
+    const kindName = underscore(getSymbolKindName(symbol.kind) ?? "document-symbol");
+    processDefinitionRange(
+      definitionRange,
+      dasherize(kindName) as ElementKind,
+      ["document-symbol" as Tag],
+      titleize(kindName),
+    );
+  });
+});
 
 // Add all the references between elements that were included in the model as relationships
 

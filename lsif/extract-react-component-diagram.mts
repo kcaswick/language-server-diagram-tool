@@ -55,8 +55,9 @@ const scopeTag = "scope" as Tag;
  * Matches files with names ending in `.test.js`, `.test.jsx`, `.spec.js`, `.spec.jsx`, `.test.ts`, `.test.tsx`, `.spec.ts`, or `.spec.tsx`.
  * Also matches files located in a `__tests__` directory.
  */
-const testRegex = /(?:\/__tests__\/.*?\/?[^/]*\.[jt]sx?)|(?:\/?([^/]*\.)+(spec|test)\.[jt]sx?)/;
-const testFolderRegex = /__tests__|Tests/;
+const testRegex =
+  /(?:\/__tests__\/.*?\/?[^/]*\.[jt]sx?)|(?:\/?([^/]*\.)+(stories|spec|test)\.[jt]sx?)/;
+const testFolderRegex = /__tests__|Tests|__mocks__|MocksDir|[Ss]toriesDir/;
 
 /**
  * Adds a new element to the given LikeC4 model index.
@@ -647,7 +648,7 @@ function processTypeDefinitionReferences(range: Range, tags: [Tag, ...Tag[]]) {
       // Find the surrounding fullRange on a range of type "definition"
       const definitionRanges = inputStore.findFullRangesFromPosition(
         inputStore.getDocumentFromRange(reference)?.uri ?? "",
-        reference.start
+        reference.start,
       );
       console.debug(
         "definitionRanges",
@@ -663,14 +664,14 @@ function processTypeDefinitionReferences(range: Range, tags: [Tag, ...Tag[]]) {
         console.error(
           `ERROR: No definition range found for ${reference.tag?.type}`,
           reference.tag?.text,
-          `at ${reference.start.line}:${reference.start.character}`
+          `at ${reference.start.line}:${reference.start.character}`,
         );
         return;
       }
 
       processDefinitionRange(definitionRange, {
         kind: "widget" as ElementKind,
-        tags,
+        tags: tags.slice(0) as [Tag, ...Tag[]], // Clone the array to prevent mutation
         technology: "React component",
       });
     }

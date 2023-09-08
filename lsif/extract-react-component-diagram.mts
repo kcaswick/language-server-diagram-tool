@@ -136,6 +136,49 @@ export const addElementsForScopes = (
   }
 };
 
+function buildPackageMap(store: JsonStoreEnhanced) {
+  const packages = store.getVerticesWithLabel(VertexLabels.packageInformation);
+
+  packages.forEach((pkg) => {
+    const monikers = store.getMonikersForPackage(pkg);
+
+    const match = monikers
+      .sort((a, b) => a.identifier.length - b.identifier.length)
+      .find((moniker) => {
+        if (moniker.scheme === "npm") {
+          return updatePackageMap(moniker);
+        }
+
+        console.warn(`Unexpected moniker scheme ${moniker.scheme} for ${moniker.identifier}`);
+        return false;
+      });
+
+    // This doesn't make sense, how would we know the package name to use?
+    // if (!match) {
+    //   const containers = inputStore.getContainersForMoniker(monikers[0]);
+    //   if (containers !== undefined) {
+    //     if (
+    //       containers.project &&
+    //       containers.project.resource &&
+    //       path.dirname(containers.project.resource).length > 1
+    //     ) {
+    //       packageRootMap.set(packageName, path.dirname(containers.project.resource));
+    //       console.debug(
+    //         `packageRootMap.set('${packageName}', '${packageRoot}') ${pathName} ${sourcePathName}`,
+    //       );
+    //     }
+    //   }
+    // }
+  });
+
+  console.debug(
+    "packageRootMap",
+    [...packageRootMap.entries()].map(
+      ([k, v]) => `${k} -> base '${packageBaseMap.get(k)}' root ${v}`,
+    ),
+  );
+}
+
 /**
  * Get the name of the enum value from the given enum object.
  * @param enumObject - The enum object to search.
@@ -424,7 +467,13 @@ export function monikerToFqn(moniker: Moniker, scopes: boolean) {
   let identifier = stripExtensions(moniker.identifier);
 
   if (moniker.scheme === "npm") {
+    const [packageName, pathName] = moniker.identifier.split(":");
+
     identifier = identifier.replace(/@/g, "_at_").replace(/(?<=^[\w@/\\-]+):/, "_pkg.");
+
+    if (packageRootMap.get(packageName) === undefined) {
+      updatePackageMap(moniker);
+    }
   } else if (
     moniker.unique !== UniquenessLevel.scheme &&
     moniker.unique !== UniquenessLevel.global
@@ -435,13 +484,27 @@ export function monikerToFqn(moniker: Moniker, scopes: boolean) {
       throw new Error(`No containers found for moniker ${moniker.identifier}`);
     }
 
-    identifier = `${
-      containers.project?.name ? containers.project.name + "_proj." : ""
-    }${stripExtensions(
+    let prefix = "";
+    let packageRoot: URL | undefined;
+    if (containers.project?.name) {
+      prefix = containers.project.name + "_proj.";
+      const packageName = projectPackageMap.get(containers.project.name);
+      if (packageName !== undefined) {
+        prefix = packageName.replace(/@/g, "_at_") + "_pkg.";
+
+        const packageRootString = packageRootMap.get(packageName);
+        if (packageRootString !== undefined) {
+          packageRoot = new URL(packageRootString.replace(/\/$/, ""));
+          prefix += packageBaseMap.get(packageName) ?? "";
+        }
+      }
+    }
+
+    identifier = `${prefix}${stripExtensions(
       `${
         // Get document path relative to workspace root
         containers.document && containers.workspace
-          ? getRelativeUrl(containers.document.uri, containers.workspace)
+          ? getRelativeUrl(containers.document.uri, packageRoot ?? containers.workspace)
           : containers.document?.uri ?? ""
       }:`,
     )}${identifier}`;
@@ -480,6 +543,66 @@ export const readJsonl = async function* (
     yield (line ? JSON.parse(line) : null) as M.JSON.Value;
   }
 };
+
+/**
+ * Updates the package map with the given path name and package name. Fetches the project name from the moniker location, and
+ * updates the package root map if the path name is a suffix of the document uri.
+ * @param pathName - The path name to remove from the file location.
+ * @param packageName - The package name to update in the package map.
+ */
+function updatePackageMap(moniker: Moniker) {
+  let isRootFound = false;
+  const [packageName, pathName] = moniker.identifier.split(":");
+  const containers = inputStore.getContainersForMoniker(moniker);
+  if (containers !== undefined) {
+    if (containers.document) {
+      // Try to get the pathname without any lib/ or dist/ folder prefix
+      // TODO: Handle more than one level of prefix
+      const sourcePathName = pathName.split("/").slice(1).join("/");
+      let packageRoot;
+
+      if (sourcePathName.length > 1 && containers.document.uri.endsWith(sourcePathName)) {
+        packageRoot = containers.document.uri.replace(sourcePathName, "");
+        packageBaseMap.set(packageName, pathName.split("/")[0] + "/");
+      }
+
+      if (pathName.length > 1 && containers.document.uri.endsWith(pathName)) {
+        packageRoot = containers.document.uri.replace(pathName, "");
+      }
+
+      // Too soon - if (
+      //   packageRoot === undefined &&
+      //   containers.project &&
+      //   containers.project.resource &&
+      //   path.dirname(containers.document.uri).endsWith(path.dirname(containers.project.resource))
+      // ) {
+      //   packageRoot = path
+      //     .dirname(containers.document.uri)
+      //     .replace(path.dirname(containers.project.resource), "");
+      // }
+
+      if (packageRoot) {
+        packageRootMap.set(packageName, packageRoot);
+        isRootFound = true;
+        console.debug(
+          `packageRootMap.set('${packageName}', '${packageRoot}') ${pathName} ${sourcePathName}`,
+        );
+
+        if (containers.project) {
+          packageProjectMap.set(packageName, containers.project.name);
+          projectPackageMap.set(containers.project.name, packageName);
+          console.debug(
+            `packageProjectMap.set('${packageName}', '${containers.project.name}') ${
+              containers.range && inputStore.getLinkFromRange(containers.range)
+            }`,
+          );
+        }
+      }
+    }
+  }
+
+  return isRootFound;
+}
 
 const coerceFile = (input: string | undefined) => {
   if (input && input !== "-" && input !== ".") {
@@ -541,6 +664,12 @@ const itemIndexOut: Record<number, Record<ItemEdgeProperties | "undefined", numb
 const model = new ModelIndex();
 const monikerIndexIn: Record<number, number[]> = {};
 const monikerIndexOut: Record<number, number[]> = {};
+
+const packageBaseMap = new Map<string, string>();
+const packageRootMap = new Map<string, string>();
+const packageProjectMap = new Map<string, string>();
+const projectPackageMap = new Map<string, string>();
+
 const nextIndexIn: Record<number, number[]> = {};
 const nextIndexOut: Record<number, number[]> = {};
 const textDocument_referencesIndexOut: Record<number, number> = {};
@@ -749,6 +878,8 @@ await inputStore.load(argv.input.path, () => noopTransformer);
 
 const elementDefinitionRanges = new Map<Fqn, DefinitionRange>();
 const resultSetIdsProcessed = new Set<number>();
+
+buildPackageMap(inputStore);
 
 // Go through all widget types and find everything implementing them
 

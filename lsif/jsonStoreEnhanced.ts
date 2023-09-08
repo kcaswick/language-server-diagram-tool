@@ -8,6 +8,7 @@ import {
   Id,
   ItemEdgeProperties,
   Moniker,
+  PackageInformation,
   Project,
   Range,
   RangeTagTypes,
@@ -19,17 +20,26 @@ import { monikerUniqueShortForms } from "lsif-sqlite/lib/compress";
 type In = JsonStore["in"] & {
   attach: Map<Id, Moniker>;
   next: Map<Id, Vertex[]>;
+  packageInformation: Map<Id, Moniker[]>;
+};
+type Out = JsonStore["out"] & {
+  attach: Map<Id, Moniker>;
 };
 
 export interface IVertexContainers {
   document: Document;
   project: Project;
+  range: Range;
   workspace: URL;
 }
 
 export class JsonStoreEnhanced extends JsonStore {
   protected get inEnhanced(): In {
     return this["in"] as In;
+  }
+
+  protected get outEnhanced() {
+    return this["out"] as Out;
   }
 
   private superDoProcessEdge: (
@@ -42,8 +52,11 @@ export class JsonStoreEnhanced extends JsonStore {
   constructor() {
     super();
 
-    this.inEnhanced.attach = new Map<Id, Moniker>();
+    this.inEnhanced.attach = new Map();
     this.inEnhanced.next = new Map();
+    this.inEnhanced.packageInformation = new Map();
+
+    this.outEnhanced.attach = new Map<Id, Moniker>();
 
     this.superDoProcessEdge = this["doProcessEdge"];
     this["doProcessEdge"] = this.doProcessEdgeEnhanced;
@@ -70,6 +83,7 @@ export class JsonStoreEnhanced extends JsonStore {
     switch (label) {
       case EdgeLabels.attach:
         this.inEnhanced.attach.set(to.id, from as Moniker);
+        this.outEnhanced.attach.set(from.id, to as Moniker);
         break;
 
       case EdgeLabels.next:
@@ -80,6 +94,16 @@ export class JsonStoreEnhanced extends JsonStore {
         }
 
         values.push(from);
+        break;
+
+      case EdgeLabels.packageInformation:
+        values = this.inEnhanced.packageInformation.get(to.id);
+        if (values === undefined) {
+          values = [];
+          this.inEnhanced.packageInformation.set(to.id, values as Moniker[]);
+        }
+
+        values.push(from as Moniker);
         break;
 
       default:
@@ -149,6 +173,11 @@ export class JsonStoreEnhanced extends JsonStore {
     )[0];
   }
 
+  public getMonikersForPackage(pkg: PackageInformation | Vertex) {
+    const monikers = this["inEnhanced"].packageInformation.get(pkg.id);
+    return monikers ?? [];
+  }
+
   public getMonikerFromRange(range: Range) {
     const resultPath = this["getResultPath"](range.id, this["out"].references);
     // Debugging disabled- console.debug(
@@ -214,7 +243,16 @@ export class JsonStoreEnhanced extends JsonStore {
     const containers: Partial<IVertexContainers> = {
       workspace: this.getWorkspaceRoot(),
     };
-    const vertices = this["findVerticesForMoniker"]({ key: "", ...moniker });
+    let vertices = this["findVerticesForMoniker"]({ key: "", ...moniker });
+    if (vertices === undefined) {
+      // Does not work for the npm moniker, so go to a previous one
+      let prevMoniker = this.outEnhanced.attach.get(moniker.id);
+      while (prevMoniker !== undefined && vertices === undefined) {
+        vertices = this["findVerticesForMoniker"]({ key: "", ...prevMoniker });
+        prevMoniker = this.outEnhanced.attach.get(prevMoniker.id);
+      }
+    }
+
     // Debugging disabled-
     // console.debug("vertices", vertices);
     if (vertices === undefined) {
@@ -240,6 +278,7 @@ export class JsonStoreEnhanced extends JsonStore {
       }
 
       if (Range.is(resultPath.result.value[0])) {
+        containers.range = resultPath.result.value[0];
         containers.document = this.getDocumentFromRange(resultPath.result.value[0]);
         if (containers.document !== undefined) {
           containers.project = this["in"].contains.get(containers.document.id) as Project;
@@ -270,7 +309,11 @@ export class JsonStoreEnhanced extends JsonStore {
     );
     return mostUniqueMoniker;
   }
-}
+
+  public getVerticesWithLabel(label: VertexLabels) {
+    return Array.from(this["vertices"].all.values()).filter((v: Vertex) => v.label === label);
+  }
+} // End of class JsonStoreEnhanced
 
 /**
  * Converts a given location object to a link.

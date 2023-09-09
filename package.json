@@ -8,6 +8,15 @@
   ],
   "main": "index.js",
   "type": "module",
+  "keywords":  [
+    "diagram",
+    "language-server",
+    "lsp",
+    "modeling",
+    "reverse-engineering",
+    "static-analysis",
+    "visualization"
+  ],
   "scripts": {
     "lint": "eslint .",
     "prepare": "husky install",

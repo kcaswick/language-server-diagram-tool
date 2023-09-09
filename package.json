@@ -1,7 +1,7 @@
 {
-  "name": "language-server-scripts",
-  "version": "1.0.0",
-  "description": "A collection of scripts that use language servers or LSIF (language server index format), and the package.json to make the libraries available.",
+  "name": "language-server-diagram-tool",
+  "version": "0.0.1-placeholder",
+  "description": "A tool to export diagrams of programs, read via language servers or LSIF (language server index format)",
   "workspaces": [
     "lsif",
     "lsp"
@@ -15,7 +15,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "@likec4/core": "^0.33.1",
     "@types/node": "^16.18.46",

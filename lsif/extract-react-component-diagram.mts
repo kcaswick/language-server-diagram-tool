@@ -30,6 +30,7 @@ import {
   textDocument_references,
 } from "lsif-protocol";
 import path from "node:path";
+import pino from "pino";
 import readline from "readline";
 import { A, M } from "ts-toolbelt";
 import { Hover, MarkupContent, MarkedString } from "vscode-languageserver-protocol";
@@ -58,6 +59,25 @@ const scopeTag = "scope" as Tag;
 const testRegex =
   /(?:\/__tests__\/.*?\/?[^/]*\.[jt]sx?)|(?:\/?([^/]*\.)+(stories|spec|test)\.[jt]sx?)/;
 const testFolderRegex = /__tests__|Tests|__mocks__|MocksDir|[Ss]toriesDir/;
+
+const logger = pino({
+  hooks: {
+    logMethod(args, method, _level) {
+      if (args.length > 1 && typeof args[0] === "string" && !args[0].includes("%")) {
+        args[0] += " %O".repeat(args.length - 1);
+        method.apply(this, args)
+      } else {
+        method.apply(this, args)
+      }
+    },
+  },
+  transport: {
+    target: "pino-pretty",
+    options: {
+      destination: process.stderr.fd,
+    },
+  },
+});
 
 /**
  * Adds a new element to the given LikeC4 model index.
@@ -93,7 +113,7 @@ export const addElementsForScopes = (
   }
 
   const childEntries = Object.entries<ElementTrie>(trie?.children ?? {});
-  console.debug(`addElementsForScopes '${parent}'`, childEntries.length);
+  logger.debug(`addElementsForScopes '${parent}'`, childEntries.length);
   for (const [name, child] of childEntries) {
     if (!child.el) {
       const tags: [Tag, ...Tag[]] = [
@@ -149,7 +169,7 @@ function buildPackageMap(store: JsonStoreEnhanced) {
           return updatePackageMap(moniker);
         }
 
-        console.warn(`Unexpected moniker scheme ${moniker.scheme} for ${moniker.identifier}`);
+        logger.warn(`Unexpected moniker scheme ${moniker.scheme} for ${moniker.identifier}`);
         return false;
       });
 
@@ -163,7 +183,7 @@ function buildPackageMap(store: JsonStoreEnhanced) {
     //       path.dirname(containers.project.resource).length > 1
     //     ) {
     //       packageRootMap.set(packageName, path.dirname(containers.project.resource));
-    //       console.debug(
+    //       logger.debug(
     //         `packageRootMap.set('${packageName}', '${packageRoot}') ${pathName} ${sourcePathName}`,
     //       );
     //     }
@@ -171,7 +191,7 @@ function buildPackageMap(store: JsonStoreEnhanced) {
     // }
   });
 
-  console.debug(
+  logger.debug(
     "packageRootMap",
     [...packageRootMap.entries()].map(
       ([k, v]) => `${k} -> base '${packageBaseMap.get(k)}' root ${v}`,
@@ -319,7 +339,7 @@ export const modelIndexToDsl = (model: ModelIndex) => {
     return dsl;
   };
 
-  console.debug("model.rootElements()", model.rootElements());
+  logger.debug("model.rootElements()", model.rootElements());
   model
     .rootElements()
     .sort((a, b) => a.id.localeCompare(b.id))
@@ -462,7 +482,7 @@ export function monikerToFqn(moniker: Moniker, scopes: boolean) {
 
   // Strip extensions and periods from the identifier
   const stripExtensions = (identifier: string) =>
-    identifier.replace(/\.(?=[jt]sx?:)/, "_").replace(".", "_dot_");
+    identifier.replace(/\.(?=[jt]sx?:)/, "_").replace(/\./g, "_dot_");
 
   let identifier = stripExtensions(moniker.identifier);
 
@@ -515,7 +535,7 @@ export function monikerToFqn(moniker: Moniker, scopes: boolean) {
   }
 
   if (debug) {
-    console.debug(`monikerToFqn ${moniker.identifier} -> ${identifier} (scopes: ${scopes}))`);
+    logger.debug(`monikerToFqn ${moniker.identifier} -> ${identifier} (scopes: ${scopes}))`);
   }
 
   const fqn = AsFqn(
@@ -526,7 +546,7 @@ export function monikerToFqn(moniker: Moniker, scopes: boolean) {
       : moniker.id,
   );
   if (debug) {
-    console.debug(`monikerToFqn ${moniker.identifier} -> ${fqn}`);
+    logger.debug(`monikerToFqn ${moniker.identifier} -> ${fqn}`);
   }
 
   return fqn;
@@ -539,7 +559,7 @@ export const readJsonl = async function* (
   const lineReader = readline.createInterface({ input: fs.createReadStream(path, options) });
 
   for await (const line of lineReader) {
-    // For extremely detailed debug output: console.debug("line", line);
+    // For extremely detailed debug output: logger.debug("line", line);
     yield (line ? JSON.parse(line) : null) as M.JSON.Value;
   }
 };
@@ -584,14 +604,14 @@ function updatePackageMap(moniker: Moniker) {
       if (packageRoot) {
         packageRootMap.set(packageName, packageRoot);
         isRootFound = true;
-        console.debug(
+        logger.debug(
           `packageRootMap.set('${packageName}', '${packageRoot}') ${pathName} ${sourcePathName}`,
         );
 
         if (containers.project) {
           packageProjectMap.set(packageName, containers.project.name);
           projectPackageMap.set(containers.project.name, packageName);
-          console.debug(
+          logger.debug(
             `packageProjectMap.set('${packageName}', '${containers.project.name}') ${
               containers.range && inputStore.getLinkFromRange(containers.range)
             }`,
@@ -631,6 +651,12 @@ const argv = yargs(hideBin(process.argv))
         normalize: true,
         coerce: coerceFile,
       })
+      .option("logLevel", {
+        type: "string",
+        default: "info",
+        description: "Level of detail to log",
+        choices: Object.values(pino.levels.labels)
+      })
       .option("scopes", {
         default: true,
         description: "Include scopes (e.g. folders, packages, etc.) as elements in the model.",
@@ -650,11 +676,14 @@ const argv = yargs(hideBin(process.argv))
   .alias("v", "version")
   .parseSync() as Arguments<{
   input: ReturnType<typeof coerceFile>;
+  logLevel: pino.LevelWithSilent;
   scopes: boolean;
   stdin: boolean;
 }>;
 
-console.debug("argv", argv);
+logger.level = argv.logLevel;
+
+logger.debug("argv", argv);
 
 const componentTypeRanges: Record<string, Range> = {};
 const elements = [] as GraphElement[];
@@ -747,7 +776,7 @@ for await (const line of argv.input.lines) {
           if (e instanceof Error) {
             e.message = `${e.message}\nwhile processing ${JSON.stringify(newItemEdgeMapEntries)}`;
           } else {
-            console.debug("newRecordEntries", newItemEdgeMapEntries);
+            logger.debug("newRecordEntries", newItemEdgeMapEntries);
           }
         }
       })() as Record<ItemEdgeProperties | "undefined", number[]>);
@@ -756,7 +785,7 @@ for await (const line of argv.input.lines) {
       );
     }
   } else if (line) {
-    console.error("Unknown line type", line);
+    logger.error("Unknown line type", line);
   }
 }
 
@@ -765,21 +794,21 @@ function processTypeDefinitionReferences(range: Range, tags: [Tag, ...Tag[]]) {
   // {"id":584,"type":"vertex","label":"range","start":{"line":545,"character":14},"end":{"line":545,"character":31},"tag":{"type":"definition","text":"FunctionComponent","kind":11,"fullRange":{"start":{"line":545,"character":4},"end":{"line":551,"character":5}}}}
   const resultSetId = nextIndexOut[range.id as number][0]; // 581
   const referenceResultId = textDocument_referencesIndexOut[resultSetId]; // 930
-  console.debug("referenceResultId", referenceResultId);
+  logger.debug("referenceResultId", referenceResultId);
 
   // TODO: Make this a function, and also apply it to the referenceResults for ClassComponent, PureComponent, and ComponentType
   itemIndexOut[referenceResultId]?.references.forEach((referenceId) => {
     // [588,645, 4261, 7043, 9735, 15832, 30761, 42710, 47293, 54658, 55255, 62295,62324, 77085, 79022, 99738]
     const reference = elements[referenceId];
     if (reference && Range.is(reference) && reference.tag?.type === RangeTagTypes.reference) {
-      console.debug("inner reference", inputStore.getLinkFromRange(reference), reference);
+      logger.debug("inner reference", inputStore.getLinkFromRange(reference), reference);
 
       // Find the surrounding fullRange on a range of type "definition"
       const definitionRanges = inputStore.findFullRangesFromPosition(
         inputStore.getDocumentFromRange(reference)?.uri ?? "",
         reference.start,
       );
-      console.debug(
+      logger.debug(
         "definitionRanges",
         definitionRanges,
         definitionRanges?.map((r) => inputStore.getLinkFromRange(r))
@@ -787,10 +816,10 @@ function processTypeDefinitionReferences(range: Range, tags: [Tag, ...Tag[]]) {
 
       // {"id":503,"type":"vertex","label":"range","start":{"line":32,"character":13},"end":{"line":32,"character":20},"tag":{"type":"definition","text":"Feature","kind":7,"fullRange":{"start":{"line":32,"character":13},"end":{"line":34,"character":19}}}}
       const definitionRange = definitionRanges?.[0];
-      console.debug(`definitionRange for inner reference`, definitionRange);
+      logger.debug(`definitionRange for inner reference`, definitionRange);
 
       if (definitionRange === undefined || !DefinitionRange.is(definitionRange)) {
-        console.error(
+        logger.error(
           `ERROR: No definition range found for ${reference.tag?.type}`,
           reference.tag?.text,
           `at ${reference.start.line}:${reference.start.character}`,
@@ -819,7 +848,7 @@ function processDefinitionRange(
   const resultSetId = nextIndexOut[definitionRange.id as number][0]; // 497, 621
 
   if (resultSetIdsProcessed.has(resultSetId)) {
-    console.warn(
+    logger.warn(
       `Already processed resultSetId ${resultSetId} referenced by definition range [${
         definitionRange.id
       }](${inputStore.getLinkFromRange(definitionRange)})`,
@@ -828,16 +857,16 @@ function processDefinitionRange(
   }
 
   resultSetIdsProcessed.add(resultSetId);
-  console.debug("processDefinitionRange resultSetId", resultSetId);
+  logger.debug("processDefinitionRange resultSetId", resultSetId);
 
   const hoverIDs = outIndex.get(resultSetId)?.get(EdgeLabels.textDocument_hover);
-  console.debug("hoverIDs", hoverIDs);
+  logger.debug("hoverIDs", hoverIDs);
   const hoverID = hoverIDs?.[0];
-  console.debug("hoverID", hoverID);
+  logger.debug("hoverID", hoverID);
   const hover = elements[hoverID as number] as HoverResult;
 
   const tscMoniker = inputStore.getMonikerFromRange(definitionRange);
-  console.debug("tscMoniker", tscMoniker);
+  logger.debug("tscMoniker", tscMoniker);
   if (tscMoniker === undefined) {
     throw new Error(
       `Expected a tsc moniker for [${definitionRange.id}](${inputStore.getLinkFromRange(
@@ -846,7 +875,7 @@ function processDefinitionRange(
     );
   }
 
-  console.debug("getAlternateMonikers", inputStore.getAlternateMonikers(tscMoniker));
+  logger.debug("getAlternateMonikers", inputStore.getAlternateMonikers(tscMoniker));
 
   const newId = monikerToFqn(inputStore.getMostUniqueMoniker(tscMoniker), argv.scopes);
 
@@ -893,20 +922,20 @@ inputStore.getDocumentInfos().forEach((docInfo) => {
 
   inputStore.documentSymbols(docInfo.uri)?.forEach((symbol) => {
     const symbolLink = locationToLink({ uri: docInfo.uri, range: symbol.range });
-    console.debug("document symbol", symbol, symbolLink);
+    logger.debug("document symbol", symbol, symbolLink);
     const definitionRanges = inputStore.findFullRangesFromPosition(docInfo.uri, symbol.range.start);
 
-    console.debug(
+    logger.debug(
       "definitionRanges",
       definitionRanges,
       definitionRanges?.map((r) => inputStore.getLinkFromRange(r)),
     );
 
     const definitionRange = definitionRanges?.[0];
-    console.debug(`definitionRange for document symbol`, definitionRange);
+    logger.debug(`definitionRange for document symbol`, definitionRange);
 
     if (definitionRange === undefined || !DefinitionRange.is(definitionRange)) {
-      console.error(
+      logger.error(
         `ERROR: No definition range found for document symbol`,
         symbol.name,
         `at ${symbolLink}`,
@@ -933,7 +962,7 @@ elementDefinitionRanges.forEach((reference, id) => {
       includeDeclaration: false,
     },
   );
-  console.debug("referenceLocations", referenceLocations?.map(locationToString));
+  logger.debug("referenceLocations", referenceLocations?.map(locationToString));
 
   referenceLocations?.forEach((referencePosition) => {
     const definitionRanges = inputStore.findFullRangesFromPosition(
@@ -941,17 +970,17 @@ elementDefinitionRanges.forEach((reference, id) => {
       referencePosition.range.start,
     );
     // Find the surrounding fullRange on a range of type "definition"
-    console.debug(
+    logger.debug(
       "definitionRanges",
       definitionRanges,
       definitionRanges?.map((r) => inputStore.getLinkFromRange(r)),
     );
 
     const definitionRange = definitionRanges?.[0];
-    console.debug(`definitionRange around reference range`, definitionRange);
+    logger.debug(`definitionRange around reference range`, definitionRange);
 
     if (definitionRange === undefined || !DefinitionRange.is(definitionRange)) {
-      console.error(
+      logger.error(
         `ERROR: No definition range found for reference to ${id} "${reference.tag
           ?.text}" at ${locationToString(referencePosition)}`,
       );
@@ -966,7 +995,7 @@ elementDefinitionRanges.forEach((reference, id) => {
     const moniker = inputStore.getMonikerFromRange(definitionRange);
 
     if (moniker === undefined) {
-      console.error(
+      logger.error(
         `ERROR: No moniker found for ${definitionRange.tag?.text} at ${inputStore.getLinkFromRange(
           definitionRange,
         )}`,
@@ -981,7 +1010,7 @@ elementDefinitionRanges.forEach((reference, id) => {
 
       // TODO: Skip imports without an error message
 
-      console.error(
+      logger.error(
         `ERROR: Self-reference found for ${referenceId} from different ranges`,
         reference,
         inputStore.getLinkFromRange(reference),
@@ -1053,13 +1082,14 @@ if (argv.scopes) {
   addElementsForScopes(model);
 }
 
-console.debug("modelIndex as JSON", JSON.stringify(model, null, 2));
+logger.debug("modelIndex as JSON", JSON.stringify(model, null, 2));
 
-console.debug(
+logger.debug(
   "elements and relations as JSON",
   JSON.stringify({ elements: model.elements, relations: model.relations }, null, 2),
 );
 
 // Output the model
 
-console.log("\nLikeC4 DSL\n", modelIndexToDsl(model));
+console.log("\n// LikeC4 DSL")
+console.log(modelIndexToDsl(model));

@@ -8,7 +8,7 @@
   ],
   "main": "index.js",
   "type": "module",
-  "keywords":  [
+  "keywords": [
     "diagram",
     "language-server",
     "lsp",
@@ -22,7 +22,7 @@
     "prepare": "husky install",
     "prettify": "prettier --write .",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "test:data:export:builderbook": "pushd lsif/__tests__/data ; lsif-tsc --workspaceRoot ./builderbook/builderbook/ --project ./builderbook.tsconfig.json --package ./builderbook/builderbook/package.json --out ./builderbook.lsif.jsonl --typeAcquisition  --noContents ; popd"
+    "test:data:export:builderbook": "cd lsif/__tests__/data ; lsif-tsc --workspaceRoot ./builderbook/builderbook/ --project ./builderbook.tsconfig.json --package ./builderbook/builderbook/package.json --out ./builderbook.lsif.jsonl --typeAcquisition  --noContents ; shx sed -i \"s/home\\/$USER\\/repos\\/language-server-diagram-tool\\/lsif\\/__tests__\\/data/./g\" ./builderbook.lsif.jsonl >/dev/null ; shx sed -i \"s/home\\/$USER\\/repos\\/language-server-diagram-tool/.\\/..\\/..\\/../g\" ./builderbook.lsif.jsonl >/dev/null ; shx sed -i \"s/home\\/$USER/.\\/..\\/..\\/..\\/..\\/../g\" ./builderbook.lsif.jsonl >/dev/null "
   },
   "author": "",
   "license": "MIT",
@@ -48,6 +48,7 @@
     "eslint-plugin-simple-import-sort": "^10.0.0",
     "husky": "^8.0.3",
     "lint-staged": "^14.0.1",
+    "shx": "^0.3.4",
     "ts-toolbelt": "^9.6.0"
   },
   "prettier": {

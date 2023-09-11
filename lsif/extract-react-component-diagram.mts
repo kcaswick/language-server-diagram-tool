@@ -802,6 +802,8 @@ for await (const line of argv.input.lines) {
     if (Range.is(line) && line.tag?.type === RangeTagTypes.definition) {
       if (line.tag.text === "FunctionComponent") {
         componentTypeRanges.FunctionComponent = line;
+      } else if (line.tag.text === "FC") {
+        componentTypeRanges.FC = line;
       } else if (line.tag.text === "ClassComponent") {
         componentTypeRanges.ClassComponent = line;
       } else if (line.tag.text === "PureComponent") {
@@ -810,6 +812,8 @@ for await (const line of argv.input.lines) {
         componentTypeRanges.ComponentType = line;
       } else if (line.tag.text === "Component") {
         componentTypeRanges.Component = line;
+      } else if (line.tag.text === "Element") {
+        componentTypeRanges.Element = line;
       }
     } else if (moniker.is(line)) {
       if (monikerIndexIn[line.inV as number]) {

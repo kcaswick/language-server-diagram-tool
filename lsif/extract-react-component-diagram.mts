@@ -1168,7 +1168,7 @@ elementDefinitionRanges.forEach((reference, id) => {
 
           const kindName =
             symbolKindAsElementKind(definitionRange.tag.kind) ?? ("unknown" as ElementKind);
-          const description = `Unknown element added for relation to ${id} "${reference.tag?.text}" to connect from`;
+          const description = `Unknown element added for relation to "${reference.tag?.text}" to connect from`;
 
           if (
             !processDefinitionRange(

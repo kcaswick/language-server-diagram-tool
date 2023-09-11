@@ -1,0 +1,3 @@
+[submodule "lsif/__tests__/data"]
+	path = lsif/__tests__/data/builderbook
+	url = https://github.com/async-labs/builderbook.git

@@ -1,0 +1,22 @@
+{
+    "compilerOptions": {
+        "target": "es6",
+        "module": "commonjs",
+        "sourceMap": true,
+        "outDir": "dist",
+        "allowJs": true,
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "moduleResolution": "node",
+        "noImplicitAny": true,
+        "skipLibCheck": true,
+        "strict": true
+    },
+    "include": [
+        "builderbook/builderbook/"
+    ],
+    "exclude": [
+      "./node_modules",
+      "./dist"
+    ]
+}

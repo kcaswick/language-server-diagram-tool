@@ -21,7 +21,8 @@
     "lint": "eslint .",
     "prepare": "husky install",
     "prettify": "prettier --write .",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:data:export:builderbook": "lsif-tsc --workspaceRoot lsif/__tests__/data/builderbook/builderbook/ --project lsif/__tests__/data/builderbook.tsconfig.json --package lsif/__tests__/data/builderbook/builderbook/package.json --out lsif/__tests__/data/builderbook.lsif.jsonl --typeAcquisition"
   },
   "author": "",
   "license": "MIT",

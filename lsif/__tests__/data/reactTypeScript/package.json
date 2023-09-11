@@ -1,0 +1,17 @@
+{
+  "name": "react-typescript-sample",
+  "version": "1.0.0",
+  "description": "A very simple example of a React app in TypeScript",
+  "main": "App.tsx",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "react": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.21"
+  }
+}

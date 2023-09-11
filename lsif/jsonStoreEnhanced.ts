@@ -239,31 +239,57 @@ export class JsonStoreEnhanced extends JsonStore {
     }
   }
 
+  private followAttachEdgesReversed(moniker: Moniker, vertices: Vertex[] | undefined) {
+    let prevMoniker = this.outEnhanced.attach.get(moniker.id);
+    while (prevMoniker !== undefined && vertices === undefined) {
+      vertices = this["findVerticesForMoniker"]({ key: "", ...prevMoniker });
+      prevMoniker = this.outEnhanced.attach.get(prevMoniker.id);
+    }
+
+    return vertices;
+  }
+
   public getContainersForMoniker(moniker: Moniker) {
     const containers: Partial<IVertexContainers> = {
       workspace: this.getWorkspaceRoot(),
     };
+
+    this.getRangesForMoniker(moniker).forEach((range) => {
+      containers.range = range;
+      containers.document = this.getDocumentFromRange(range);
+      if (containers.document !== undefined) {
+        containers.project = this["in"].contains.get(containers.document.id) as Project;
+      }
+
+      // Debugging disabled-
+      // console.debug("containers", {
+      //   document: String(containers.document?.uri),
+      //   project: String(containers.project?.name),
+      //   workspace: String(containers.workspace?.href),
+      // });
+    });
+
+    return containers;
+  }
+
+  public getRangesForMoniker(moniker: Moniker): Range[] {
     let vertices = this["findVerticesForMoniker"]({ key: "", ...moniker });
     if (vertices === undefined) {
       // Does not work for the npm moniker, so go to a previous one
-      let prevMoniker = this.outEnhanced.attach.get(moniker.id);
-      while (prevMoniker !== undefined && vertices === undefined) {
-        vertices = this["findVerticesForMoniker"]({ key: "", ...prevMoniker });
-        prevMoniker = this.outEnhanced.attach.get(prevMoniker.id);
-      }
+      vertices = this.followAttachEdgesReversed(moniker, vertices);
     }
 
     // Debugging disabled-
     // console.debug("vertices", vertices);
     if (vertices === undefined) {
-      return;
+      return [];
     }
 
-    vertices.forEach((vertex) => {
+    return vertices.flatMap((vertex) => {
       const resultPath = this["getResultPath"](vertex.id, this.inEnhanced.next);
       // Debugging disabled-
       // console.debug(
-      //   `getContainersForMoniker '${moniker.identifier}' vertex`,
+      //   `getRangesForMoniker '${moniker.identifier}' vertex`,
       //   vertex,
       //   "resultPath.path",
       //   resultPath.path.map(
@@ -274,26 +300,13 @@ export class JsonStoreEnhanced extends JsonStore {
       //   resultPath.result,
       // );
       if (resultPath.result === undefined) {
-        return;
+        return [];
       }
 
-      if (Range.is(resultPath.result.value[0])) {
-        containers.range = resultPath.result.value[0];
-        containers.document = this.getDocumentFromRange(resultPath.result.value[0]);
-        if (containers.document !== undefined) {
-          containers.project = this["in"].contains.get(containers.document.id) as Project;
-        }
-
-        // Debugging disabled-
-        // console.debug("containers", {
-        //   document: String(containers.document?.uri),
-        //   project: String(containers.project?.name),
-        //   workspace: String(containers.workspace?.href),
-        // });
-      }
+      return resultPath.result.value.filter(Range.is).map((v) => {
+        return v as Range;
+      });
     });
-
-    return containers;
   }
 
   public getMostUniqueMoniker(moniker: Moniker) {

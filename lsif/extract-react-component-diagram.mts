@@ -60,6 +60,7 @@ const typeElementKinds = symbolKindsAsElementKinds(typeSymbolKinds);
 
 const typeAliasKind = "type-alias" as ElementKind;
 
+const includeOptionTag = "included-by-config" as Tag;
 const scopeTag = "scope" as Tag;
 const typeTag = "type" as Tag;
 
@@ -744,11 +745,17 @@ const argv = yargs(hideBin(process.argv))
         normalize: true,
         coerce: coerceFile,
       })
+      .option("include", {
+        type: "string",
+        description:
+          "Regex to include additional classes in the diagram that would not be included automatically",
+        coerce: (input) => new RegExp(input),
+      })
       .option("logLevel", {
         type: "string",
         default: "info",
         description: "Level of detail to log",
-        choices: Object.values(pino.levels.labels)
+        choices: Object.values(pino.levels.labels),
       })
       .option("scopes", {
         default: true,
@@ -768,6 +775,7 @@ const argv = yargs(hideBin(process.argv))
   .version()
   .alias("v", "version")
   .parseSync() as Arguments<{
+  include: RegExp | undefined;
   input: ReturnType<typeof coerceFile>;
   logLevel: pino.LevelWithSilent;
   scopes: boolean;
@@ -980,7 +988,7 @@ function processDefinitionRange(
     tags.push("test" as Tag);
   }
 
-  const [hoverText, hoverCode] = hoverToString(hover?.result) ?? [];
+  const [hoverText, hoverCode] = (hover && hoverToString(hover.result)) ?? [];
 
   const symbolName = definitionRange.tag?.text ?? tscMoniker.identifier.split(":").pop();
 
@@ -1044,6 +1052,36 @@ Object.values(componentTypeRanges).map((r) =>
   processTypeDefinitionReferences(r, ["widget" as Tag, "component" as Tag, "react" as Tag]),
 );
 
+// Apply custom inclusions, if any
+const { include } = argv; // TypeScript wasn't smart enough to figure out that the if meant argv.include was defined, until I moved it to a constant
+if (include !== undefined) {
+  (
+    (inputStore.getVerticesWithLabel(VertexLabels.moniker) as Moniker[])
+      .filter((m) => include.test(m.identifier))
+      .flatMap((m) => inputStore.getRangesForMoniker(m))
+      .filter((r) => r !== undefined && DefinitionRange.is(r)) as DefinitionRange[]
+  ).forEach((d) =>
+    processDefinitionRange(d, {
+      ...getElementDefaultsForSymbolKind(d.tag?.kind, "unknown" as ElementKind),
+      tags: [includeOptionTag],
+    }),
+  );
+}
+
+/**
+ * Returns the default element kind and technology for a given symbol kind.
+ * @param kind The symbol kind to get the defaults for.
+ * @param fallback The fallback element kind to use if the symbol kind is not recognized.
+ * @returns An object containing the default element kind and technology.
+ */
+function getElementDefaultsForSymbolKind(kind: SymbolKind, fallback: ElementKind) {
+  const kindName = getSymbolKindName(kind);
+  return {
+    kind: symbolKindAsElementKind(kind) ?? fallback,
+    technology: titleize(kindName ?? fallback),
+  };
+}
+
 // Add all remaining elements to the model
 inputStore.getDocumentInfos().forEach((docInfo) => {
   // TODO: Add documents themselves
@@ -1071,11 +1109,9 @@ inputStore.getDocumentInfos().forEach((docInfo) => {
       return;
     }
 
-    const kindName = underscore(getSymbolKindName(symbol.kind) ?? "document-symbol");
     processDefinitionRange(definitionRange, {
-      kind: dasherize(kindName) as ElementKind,
+      ...getElementDefaultsForSymbolKind(symbol.kind, "document-symbol" as ElementKind),
       tags: ["document-symbol" as Tag],
-      technology: titleize(kindName),
     });
   });
 });
@@ -1166,17 +1202,19 @@ elementDefinitionRanges.forEach((reference, id) => {
             tags.push("test" as Tag);
           }
 
-          const kindName =
-            symbolKindAsElementKind(definitionRange.tag.kind) ?? ("unknown" as ElementKind);
+          const kindDefaults = getElementDefaultsForSymbolKind(
+            definitionRange.tag.kind,
+            "unknown" as ElementKind,
+          );
           const description = `Unknown element added for relation to "${reference.tag?.text}" to connect from`;
 
           if (
             !processDefinitionRange(
               definitionRange,
               {
-                kind: kindName,
+                kind: kindDefaults.kind,
                 tags,
-                technology: kindName === "unknown" ? null : titleize(kindName),
+                technology: kindDefaults.kind === "unknown" ? null : kindDefaults.technology,
               },
               {
                 defaultDescription: description,

@@ -655,7 +655,7 @@ function symbolKindAsElementKind(kind: SymbolKind): ElementKind | undefined {
  * @returns An array of `ElementKind` values.
  */
 function symbolKindsAsElementKinds(list: SymbolKind[]): ElementKind[] {
-  return list.map(getSymbolKindName).filter((k) => k !== undefined) as ElementKind[];
+  return list.map(symbolKindAsElementKind).filter((k) => k !== undefined) as ElementKind[];
 }
 
 /**

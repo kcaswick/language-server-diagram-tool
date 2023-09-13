@@ -1,0 +1,198 @@
+
+// LikeC4 DSL for lsif/__tests__/data/reactTypeScript/reactTypeScript.lsif.jsonl
+specification {
+  element folder
+  element function
+  element interface
+  element package
+  element property
+  element scope
+  tag included-by-config
+  tag level-0
+  tag level-1
+  tag level-2
+  tag level-3
+  tag level-4
+  tag level-5
+  tag level-6
+  tag reference
+  tag scope
+  tag single-child
+  tag type
+}
+model {
+  react-typescript-samplePkg = package 'React-Typescript-Sample Package' 'react-typescript-sample:' {
+    #scope, #level-0
+
+    _ = property '' '' 'Property' {
+      #included-by-config
+      link file:///./reactTypeScript/App.tsx:1:1
+      }
+
+
+    _default = function 'MyApp' '' 'Function' {
+      #included-by-config
+      link file:///./reactTypeScript/App.tsx:16:27
+      }
+
+    }
+
+  reactTypeScriptProj = scope 'React Type Script Proj' '.reactTypeScriptProj' {
+    #scope, #level-0, #single-child
+
+    Dir = folder 'Folder' 'reactTypeScriptProj/' {
+      #scope, #level-1, #single-child
+
+      reacttypescriptDir = folder 'Reacttypescript Folder' 'reactTypeScriptProj/reacttypescript/' {
+        #scope, #level-2
+
+        appTsx__jh4aeiavq93ewfheu0pxq__ = property 'title' '
+The text to display inside the button' 'Property' {
+          #included-by-config
+          link file:///./reactTypeScript/App.tsx:20:19
+          }
+
+
+        appTsx_1xubk1o4gpsphenapacc2q__ = property 'disabled' '
+Whether the button can be interacted with' 'Property' {
+          #included-by-config
+          link file:///./reactTypeScript/App.tsx:20:49
+          }
+
+
+        appTsx_7_BzpHuwLpxeIKkBFoCeg__ = property 'title' '
+The text to display inside the button' 'Property' {
+          #included-by-config
+          link file:///./reactTypeScript/App.tsx:5:5
+          }
+
+
+        appTsx_eeydjsrrmcvedk0ddaiubw__ = property 'title' '' 'Property' {
+          #included-by-config
+          link file:///./reactTypeScript/App.tsx:10:23
+          }
+
+
+        appTsx_gm_4hLA_Trk2xCFh9UF5A__ = function 'MyButton' '' 'Function' {
+          #included-by-config
+          link file:///./reactTypeScript/App.tsx:10:12
+          }
+
+
+        appTsx_jsxDotIntrinsicelementsDotButton = property 'button' '' 'Property' {
+          #included-by-config
+          link file:///./reactTypeScript/node_modules/@types/react/ts5.0/index.d.ts:3234:13
+          }
+
+
+        appTsx_jsxDotIntrinsicelementsDotDiv = property 'div' '' 'Property' {
+          #included-by-config
+          link file:///./reactTypeScript/node_modules/@types/react/ts5.0/index.d.ts:3249:13
+          }
+
+
+        appTsx_jsxDotIntrinsicelementsDotH1 = property 'h1' '' 'Property' {
+          #included-by-config
+          link file:///./reactTypeScript/node_modules/@types/react/ts5.0/index.d.ts:3259:13
+          }
+
+
+        appTsx_lnv5zawc8tbukwwersuyia__ = property 'disabled' '' 'Property' {
+          #included-by-config
+          link file:///./reactTypeScript/App.tsx:10:30
+          }
+
+
+        appTsx_mlwuh7dd9n_KQUvc6maT_Q__ = property 'disabled' '' 'Property' {
+          #included-by-config
+          link file:///./reactTypeScript/App.tsx:12:15
+          }
+
+
+        appTsx_nodeModulesDir = folder 'App Tsx Node Modules Folder' 'reactTypeScriptProj/reacttypescript/appTsx_nodeModules/' {
+          #scope, #level-3, #single-child
+
+          _at_typesDir = scope '@types Folder' 'reactTypeScriptProj/reacttypescript/appTsx_nodeModules/@types/' {
+            #scope, #level-4, #single-child
+            }
+
+          }
+
+
+        appTsx_qne_ajiszdt5txoojobufw__ = property 'disabled' '
+Whether the button can be interacted with' 'Property' {
+          #included-by-config
+          link file:///./reactTypeScript/App.tsx:7:5
+          }
+
+
+        appTsx_vapj_kfqzo9crvs_6FhGLw__ = property 'React' '' 'Property' {
+          #included-by-config
+          link file:///./reactTypeScript/node_modules/@types/react/ts5.0/index.d.ts:35:19
+          }
+
+
+        appTsx_wotwq5qdyo_3b0cbytx4ha__ = interface 'MyButtonProps' '' 'Interface' {
+          #included-by-config, #type
+          link file:///./reactTypeScript/App.tsx:3:11
+          }
+
+        }
+
+      }
+
+    }
+
+  reactTypeScriptProj.Dir.reacttypescriptDir.appTsx_gm_4hLA_Trk2xCFh9UF5A__ -> reactTypeScriptProj.Dir.reacttypescriptDir.appTsx_wotwq5qdyo_3b0cbytx4ha__ 'reference' {#reference}
+  react-typescript-samplePkg._default -> reactTypeScriptProj.Dir.reacttypescriptDir.appTsx_gm_4hLA_Trk2xCFh9UF5A__ 'reference' {#reference}
+  reactTypeScriptProj.Dir.reacttypescriptDir.appTsx_gm_4hLA_Trk2xCFh9UF5A__ -> reactTypeScriptProj.Dir.reacttypescriptDir.appTsx_eeydjsrrmcvedk0ddaiubw__ 'reference' {#reference}
+  reactTypeScriptProj.Dir.reacttypescriptDir.appTsx_gm_4hLA_Trk2xCFh9UF5A__ -> reactTypeScriptProj.Dir.reacttypescriptDir.appTsx_lnv5zawc8tbukwwersuyia__ 'reference' {#reference}
+  reactTypeScriptProj.Dir.reacttypescriptDir.appTsx_gm_4hLA_Trk2xCFh9UF5A__ -> reactTypeScriptProj.Dir.reacttypescriptDir.appTsx_jsxDotIntrinsicelementsDotButton 'reference' {#reference}
+  react-typescript-samplePkg._default -> reactTypeScriptProj.Dir.reacttypescriptDir.appTsx_jsxDotIntrinsicelementsDotDiv 'reference' {#reference}
+  react-typescript-samplePkg._default -> reactTypeScriptProj.Dir.reacttypescriptDir.appTsx_jsxDotIntrinsicelementsDotH1 'reference' {#reference}
+}
+
+views {
+  view index {
+    title 'Landscape'
+    include *
+  }
+
+  view indexFlat {
+    title 'Landscape (flat)'
+    include *, react-typescript-samplePkg.*, reactTypeScriptProj.*, reactTypeScriptProj.Dir.*, reactTypeScriptProj.Dir.reacttypescriptDir.*, reactTypeScriptProj.Dir.reacttypescriptDir.appTsx_nodeModulesDir.*
+    exclude element.tag = #scope	// Comment this line to nest within scopes
+  }
+
+  view indexShallow {
+    title 'Landscape (2 levels of folders)'
+    include *, react-typescript-samplePkg.*, reactTypeScriptProj.*, reactTypeScriptProj.Dir.*, reactTypeScriptProj.Dir.reacttypescriptDir.*, reactTypeScriptProj.Dir.reacttypescriptDir.appTsx_nodeModulesDir.*
+    exclude element.tag = #scope
+    include element.kind = package
+    include element.tag = #level-2, element.tag = #level-3
+    exclude element.kind = function
+    exclude element.kind = property
+  }
+
+  view React-Typescript-Sample-Package of react-typescript-samplePkg {
+    title 'React-Typescript-Sample Package'
+    include *
+  }
+  view React-Type-Script-Proj of reactTypeScriptProj {
+    title 'React Type Script Proj'
+    include *
+  }
+  view reactTypeScriptProjFolder of reactTypeScriptProj.Dir {
+    title 'Folder'
+    include *
+  }
+  view reactTypeScriptProj-DirReacttypescript-Folder of reactTypeScriptProj.Dir.reacttypescriptDir {
+    title 'Reacttypescript Folder'
+    include *
+  }
+  view reactTypeScriptProj-Dir-reacttypescriptDirApp-Tsx-Node-Modules-Folder of reactTypeScriptProj.Dir.reacttypescriptDir.appTsx_nodeModulesDir {
+    title 'App Tsx Node Modules Folder'
+    include *
+  }
+}
+

@@ -145,7 +145,7 @@ export const addElementsForScopes = (
       }
 
       addElement(model, {
-        id: AsFqn(name, parent),
+        id: AsFqn(stripExtensions(name).replace(/@/g, "_at_"), parent),
         kind: (name.endsWith("Pkg")
           ? "package"
           : folderRegex.test(name)
@@ -549,6 +549,15 @@ export const modelIndexToDsl = (model: ModelIndex) => {
   return dsl.join("\n");
 };
 
+
+/**
+ * Replaces file extensions and periods in a given identifier with underscores.
+ * @param identifier - The identifier to strip extensions from.
+ * @returns The identifier with extensions replaced with underscores.
+ */
+const stripExtensions = (identifier: string) =>
+  identifier.replace(/\.(?=[jt]sx?:)/, "_").replace(/\./g, "_dot_");
+
 /**
  * Sanitizes a Moniker and converts it to a fully qualified name (FQN) string.
  * @param moniker The Moniker object to convert.
@@ -557,10 +566,6 @@ export const modelIndexToDsl = (model: ModelIndex) => {
  */
 export function monikerToFqn(moniker: Moniker, scopes: boolean) {
   const debug = true;
-
-  // Strip extensions and periods from the identifier
-  const stripExtensions = (identifier: string) =>
-    identifier.replace(/\.(?=[jt]sx?:)/, "_").replace(/\./g, "_dot_");
 
   let identifier = stripExtensions(moniker.identifier);
 
@@ -1023,18 +1028,26 @@ function processDefinitionRange(
     }
   }
 
-  addElement(model, {
-    description: hoverText && hoverText !== "" ? hoverText : defaultDescription ?? "",
-    links: [inputStore.getLinkFromRange(definitionRange)],
-    kind,
-    id: newId,
-    technology,
-    title:
-      definitionRange.tag?.text ??
-      titleize(underscore(tscMoniker.identifier.split(":").pop() ?? "Unknown")),
-    tags,
-  });
-  elementDefinitionRanges.set(newId, definitionRange);
+  const elementDefinitionRangeList = elementDefinitionRanges.get(newId);
+  if (!elementDefinitionRangeList) {
+    addElement(model, {
+      description: hoverText && hoverText !== "" ? hoverText : defaultDescription ?? "",
+      links: [inputStore.getLinkFromRange(definitionRange)],
+      kind,
+      id: newId,
+      technology,
+      title:
+        definitionRange.tag?.text ??
+        titleize(underscore(tscMoniker.identifier.split(":").pop() ?? "Unknown")),
+      tags,
+    });
+  }
+  elementDefinitionRanges.set(
+    newId,
+    elementDefinitionRangeList
+      ? elementDefinitionRangeList.concat(definitionRange)
+      : [definitionRange],
+  );
   return true;
 }
 // #endregion Processing functions
@@ -1044,7 +1057,7 @@ await inputStore.load(argv.input.path, () => noopTransformer);
 
 // Process the model and add all React components to the model
 
-const elementDefinitionRanges = new Map<Fqn, DefinitionRange>();
+const elementDefinitionRanges = new Map<Fqn, DefinitionRange[]>();
 const resultSetIdsProcessed = new Set<number>();
 
 buildPackageMap(inputStore);
@@ -1121,132 +1134,133 @@ inputStore.getDocumentInfos().forEach((docInfo) => {
 
 // Add all the references between elements that were included in the model as relationships
 
-elementDefinitionRanges.forEach((reference, id) => {
-  const referenceLocations = inputStore.references(
-    inputStore.getDocumentFromRange(reference)?.uri ?? "",
-    reference.start,
-    {
-      includeDeclaration: false,
-    },
-  );
-  logger.debug("referenceLocations", referenceLocations?.map(locationToString));
-
-  referenceLocations?.forEach((referencePosition) => {
-    const definitionRanges = inputStore.findFullRangesFromPosition(
-      referencePosition.uri,
-      referencePosition.range.start,
+elementDefinitionRanges.forEach((references, id) =>
+  references.forEach((reference) => {
+    const referenceLocations = inputStore.references(
+      inputStore.getDocumentFromRange(reference)?.uri ?? "",
+      reference.start,
+      {
+        includeDeclaration: false,
+      },
     );
-    // Find the surrounding fullRange on a range of type "definition"
-    logger.debug(
-      "definitionRanges",
-      definitionRanges,
-      definitionRanges?.map((r) => inputStore.getLinkFromRange(r)),
-    );
+    logger.debug("referenceLocations", referenceLocations?.map(locationToString));
 
-    const definitionRange = definitionRanges?.[0];
-    logger.debug(`definitionRange around reference range`, definitionRange);
-
-    if (definitionRange === undefined || !DefinitionRange.is(definitionRange)) {
-      logger.error(
-        `ERROR: No definition range found for reference to ${id} "${reference.tag
-          ?.text}" at ${locationToString(referencePosition)}`,
+    referenceLocations?.forEach((referencePosition) => {
+      const definitionRanges = inputStore.findFullRangesFromPosition(
+        referencePosition.uri,
+        referencePosition.range.start,
       );
-      return;
-    }
+      // Find the surrounding fullRange on a range of type "definition"
+      logger.debug(
+        "definitionRanges",
+        definitionRanges,
+        definitionRanges?.map((r) => inputStore.getLinkFromRange(r)),
+      );
 
-    if (definitionRange === reference) {
-      // Skip self-references
-      return;
-    }
+      const definitionRange = definitionRanges?.[0];
+      logger.debug(`definitionRange around reference range`, definitionRange);
 
-    const moniker = inputStore.getMonikerFromRange(definitionRange);
+      if (definitionRange === undefined || !DefinitionRange.is(definitionRange)) {
+        logger.error(
+          `ERROR: No definition range found for reference to ${id} "${reference.tag
+            ?.text}" at ${locationToString(referencePosition)}`,
+        );
+        return;
+      }
 
-    if (moniker === undefined) {
-      logger.error(
-        `ERROR: No moniker found for ${definitionRange.tag?.text} at ${inputStore.getLinkFromRange(
+      if (definitionRange === reference) {
+        // Skip self-references
+        return;
+      }
+
+      const moniker = inputStore.getMonikerFromRange(definitionRange);
+
+      if (moniker === undefined) {
+        logger.error(
+          `ERROR: No moniker found for ${definitionRange.tag
+            ?.text} at ${inputStore.getLinkFromRange(definitionRange)}`,
+        );
+        return;
+      }
+
+      const referenceId = monikerToFqn(inputStore.getMostUniqueMoniker(moniker), argv.scopes);
+
+      if (referenceId === id) {
+        // Skip self-references
+
+        // TODO: Skip imports without an error message
+
+        logger.error(
+          `ERROR: Self-reference found for ${referenceId} from different ranges`,
+          reference,
+          inputStore.getLinkFromRange(reference),
           definitionRange,
-        )}`,
-      );
-      return;
-    }
+          inputStore.getLinkFromRange(definitionRange),
+        );
+        return;
+      }
 
-    const referenceId = monikerToFqn(inputStore.getMostUniqueMoniker(moniker), argv.scopes);
+      const newRelation: Relation = {
+        source: referenceId,
+        target: id,
+        tags: [RangeTagTypes.reference as Tag],
+        id: `${referenceId}_${RangeTagTypes.reference}_${id}` as RelationID,
+        title: humanize(RangeTagTypes.reference, true),
+      };
+      try {
+        model.addRelation(newRelation);
+      } catch (e) {
+        if (e instanceof InvalidModelError) {
+          if (e.message.includes("Source of relation not found")) {
+            const tags: [Tag, ...Tag[]] = ["unknown" as Tag];
 
-    if (referenceId === id) {
-      // Skip self-references
+            if (testRegex.test(inputStore.getDocumentFromRange(definitionRange)?.uri ?? "")) {
+              tags.push("test" as Tag);
+            }
 
-      // TODO: Skip imports without an error message
+            const kindDefaults = getElementDefaultsForSymbolKind(
+              definitionRange.tag.kind,
+              "unknown" as ElementKind,
+            );
+            const description = `Unknown element added for relation to "${reference.tag?.text}" to connect from`;
 
-      logger.error(
-        `ERROR: Self-reference found for ${referenceId} from different ranges`,
-        reference,
-        inputStore.getLinkFromRange(reference),
-        definitionRange,
-        inputStore.getLinkFromRange(definitionRange),
-      );
-      return;
-    }
+            if (
+              !processDefinitionRange(
+                definitionRange,
+                {
+                  kind: kindDefaults.kind,
+                  tags,
+                  technology: kindDefaults.kind === "unknown" ? null : kindDefaults.technology,
+                },
+                {
+                  defaultDescription: description,
+                },
+              )
+            ) {
+              addElement(model, {
+                description,
+                links: [
+                  inputStore.getLinkFromRange(definitionRange),
+                  locationToString(referencePosition),
+                ],
 
-    const newRelation: Relation = {
-      source: referenceId,
-      target: id,
-      tags: [RangeTagTypes.reference as Tag],
-      id: `${referenceId}_${RangeTagTypes.reference}_${id}` as RelationID,
-      title: humanize(RangeTagTypes.reference, true),
-    };
-    try {
-      model.addRelation(newRelation);
-    } catch (e) {
-      if (e instanceof InvalidModelError) {
-        if (e.message.includes("Source of relation not found")) {
-          const tags: [Tag, ...Tag[]] = ["unknown" as Tag];
-
-          if (testRegex.test(inputStore.getDocumentFromRange(definitionRange)?.uri ?? "")) {
-            tags.push("test" as Tag);
-          }
-
-          const kindDefaults = getElementDefaultsForSymbolKind(
-            definitionRange.tag.kind,
-            "unknown" as ElementKind,
-          );
-          const description = `Unknown element added for relation to "${reference.tag?.text}" to connect from`;
-
-          if (
-            !processDefinitionRange(
-              definitionRange,
-              {
-                kind: kindDefaults.kind,
+                kind: "unknown" as ElementKind,
+                id: referenceId,
+                technology: null,
+                title:
+                  definitionRange.tag?.text ??
+                  titleize(underscore(moniker.identifier.split(":").pop() ?? "Unknown")),
                 tags,
-                technology: kindDefaults.kind === "unknown" ? null : kindDefaults.technology,
-              },
-              {
-                defaultDescription: description,
-              },
-            )
-          ) {
-            addElement(model, {
-              description,
-              links: [
-                inputStore.getLinkFromRange(definitionRange),
-                locationToString(referencePosition),
-              ],
+              });
+            }
 
-              kind: "unknown" as ElementKind,
-              id: referenceId,
-              technology: null,
-              title:
-                definitionRange.tag?.text ??
-                titleize(underscore(moniker.identifier.split(":").pop() ?? "Unknown")),
-              tags,
-            });
+            model.addRelation(newRelation);
           }
-
-          model.addRelation(newRelation);
         }
       }
-    }
-  });
-});
+    });
+  }),
+);
 
 if (argv.scopes) {
   addElementsForScopes(model);

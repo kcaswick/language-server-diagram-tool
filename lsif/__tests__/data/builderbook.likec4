@@ -1,0 +1,860 @@
+
+// LikeC4 DSL
+specification {
+  element class
+  element folder
+  element function
+  element method
+  element package
+  element property
+  element scope
+  tag document-symbol
+  tag level-0
+  tag level-1
+  tag level-2
+  tag level-3
+  tag level-4
+  tag level-5
+  tag reference
+  tag scope
+  tag single-child
+  tag test
+  tag unknown
+}
+model {
+  builderbookPkg = package 'Builderbook Package' 'builderbook:' {
+    #scope, #level-0, #single-child
+
+    DotDotDir = folder 'Dot Dot Folder' 'builderbook:DotDot/' {
+      #scope, #level-1, #single-child
+
+      DotDotDir = scope 'Dot Dot Folder' 'builderbook:DotDot/DotDot/' {
+        #scope, #level-2, #single-child
+
+        distDir = scope 'Dist Folder' 'builderbook:DotDot/DotDot/dist/' {
+          #scope, #level-3
+
+          componentsDir = folder 'Components Folder' 'builderbook:DotDot/DotDot/dist/components/' {
+            #scope, #level-4
+
+            adminDir = scope 'Admin Folder' 'builderbook:DotDot/DotDot/dist/components/admin/' {
+              #scope, #level-5, #single-child
+
+              editbookJsx_default = class 'EditBook' '' 'Class' {
+                #document-symbol
+                link file:///./builderbook/builderbook/components/admin/EditBook.jsx:24:7
+                }
+
+              }
+
+
+            customerDir = folder 'Customer Folder' 'builderbook:DotDot/DotDot/dist/components/customer/' {
+              #scope, #level-5, #single-child
+
+              buybuttonJsx_default = class 'BuyButton' '' 'Class' {
+                #document-symbol
+                link file:///./builderbook/builderbook/components/customer/BuyButton.jsx:46:7
+                }
+
+              }
+
+
+            headerJsx_default = function 'Header' '' 'Function' {
+              #document-symbol
+              link file:///./builderbook/builderbook/components/Header.jsx:55:10
+              }
+
+
+            menuwithavatarJsx_default = class 'MenuWithAvatar' '' 'Class' {
+              #document-symbol
+              link file:///./builderbook/builderbook/components/MenuWithAvatar.jsx:14:7
+              }
+
+
+            notifierJsx_default = class 'Notifier' '' 'Class' {
+              #document-symbol
+              link file:///./builderbook/builderbook/components/Notifier.jsx:6:7
+              }
+
+
+            notifierJsx_opensnackbarexported = function 'openSnackbarExported' '' 'Function' {
+              #document-symbol
+              link file:///./builderbook/builderbook/components/Notifier.jsx:51:17
+              }
+
+            }
+
+
+          libDir = scope 'Lib Folder' 'builderbook:DotDot/DotDot/dist/lib/' {
+            #scope, #level-4
+
+            apiDir = scope 'Api Folder' 'builderbook:DotDot/DotDot/dist/lib/api/' {
+              #scope, #level-5
+
+              admin_addbookapimethod = property 'addBookApiMethod' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default "sendRequest" to connect from' 'Property' {
+                #unknown
+                link file:///./builderbook/builderbook/lib/api/admin.js:10:14
+                }
+
+
+              admin_editbookapimethod = property 'editBookApiMethod' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default "sendRequest" to connect from' 'Property' {
+                #unknown
+                link file:///./builderbook/builderbook/lib/api/admin.js:15:14
+                }
+
+
+              admin_getbookdetailapimethod = property 'getBookDetailApiMethod' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default "sendRequest" to connect from' 'Property' {
+                #unknown
+                link file:///./builderbook/builderbook/lib/api/admin.js:25:14
+                }
+
+
+              admin_getbooklistapimethod = property 'getBookListApiMethod' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default "sendRequest" to connect from' 'Property' {
+                #unknown
+                link file:///./builderbook/builderbook/lib/api/admin.js:5:14
+                }
+
+
+              admin_getgithubreposapimethod = property 'getGithubReposApiMethod' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default "sendRequest" to connect from' 'Property' {
+                #unknown
+                link file:///./builderbook/builderbook/lib/api/admin.js:32:14
+                }
+
+
+              admin_syncbookcontentapimethod = property 'syncBookContentApiMethod' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default "sendRequest" to connect from' 'Property' {
+                #unknown
+                link file:///./builderbook/builderbook/lib/api/admin.js:37:14
+                }
+
+
+              customer_fetchcheckoutsessionapimethod = property 'fetchCheckoutSessionApiMethod' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default "sendRequest" to connect from' 'Property' {
+                #unknown
+                link file:///./builderbook/builderbook/lib/api/customer.js:5:14
+                }
+
+
+              customer_getmybooklistapimethod = property 'getMyBookListApiMethod' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default "sendRequest" to connect from' 'Property' {
+                #unknown
+                link file:///./builderbook/builderbook/lib/api/customer.js:10:14
+                }
+
+
+              getrooturl_export_ = function 'getRootUrl' '' 'Function' {
+                #document-symbol
+                link file:///./builderbook/builderbook/lib/api/getRootUrl.js:1:10
+                }
+
+
+              public_getbookdetailapimethod = property 'getBookDetailApiMethod' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default "sendRequest" to connect from' 'Property' {
+                #unknown
+                link file:///./builderbook/builderbook/lib/api/public.js:5:14
+                }
+
+
+              public_getchapterdetailapimethod = property 'getChapterDetailApiMethod' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default "sendRequest" to connect from' 'Property' {
+                #unknown
+                link file:///./builderbook/builderbook/lib/api/public.js:10:14
+                }
+
+
+              sendrequest_default = function 'sendRequest' '' 'Function' {
+                #document-symbol
+                link file:///./builderbook/builderbook/lib/api/sendRequest.js:4:31
+                }
+
+              }
+
+
+            notify_default = function 'notify' '' 'Function' {
+              #document-symbol
+              link file:///./builderbook/builderbook/lib/notify.js:3:25
+              }
+
+
+            withauthJsx_default = function 'withAuth' '' 'Function' {
+              #document-symbol
+              link file:///./builderbook/builderbook/lib/withAuth.jsx:7:25
+              }
+
+            }
+
+
+          pagesDir = scope 'Pages Folder' 'builderbook:DotDot/DotDot/dist/pages/' {
+            #scope, #level-4
+
+            AppJsx_default = function 'MyApp' '' 'Function' {
+              #document-symbol
+              link file:///./builderbook/builderbook/pages/_app.jsx:39:10
+              }
+
+
+            DocumentJsx_default = function 'MyDocument' '' 'Function' {
+              #document-symbol
+              link file:///./builderbook/builderbook/pages/_document.jsx:15:10
+              }
+
+            }
+
+
+          serverDir = scope 'Server Folder' 'builderbook:DotDot/DotDot/dist/server/' {
+            #scope, #level-4
+
+            apiDir = scope 'Api Folder' 'builderbook:DotDot/DotDot/dist/server/api/' {
+              #scope, #level-5, #single-child
+
+              index_export_ = function 'api' '' 'Function' {
+                #document-symbol
+                link file:///./builderbook/builderbook/server/api/index.js:5:10
+                }
+
+              }
+
+
+            aws-ses_export_ = function 'sendEmail' '' 'Function' {
+              #document-symbol
+              link file:///./builderbook/builderbook/server/aws-ses.js:3:10
+              }
+
+
+            github_getcommits = function 'getCommits' '' 'Function' {
+              #document-symbol
+              link file:///./builderbook/builderbook/server/github.js:151:10
+              }
+
+
+            github_getrepodetail = function 'getRepoDetail' '' 'Function' {
+              #document-symbol
+              link file:///./builderbook/builderbook/server/github.js:144:10
+              }
+
+
+            github_getrepos = function 'getRepos' '' 'Function' {
+              #document-symbol
+              link file:///./builderbook/builderbook/server/github.js:134:10
+              }
+
+
+            github_setupgithub = function 'setupGithub' '' 'Function' {
+              #document-symbol
+              link file:///./builderbook/builderbook/server/github.js:15:10
+              }
+
+
+            google_export_ = function 'setupGoogle' '' 'Function' {
+              #document-symbol
+              link file:///./builderbook/builderbook/server/google.js:5:10
+              }
+
+
+            mailchimp_addtomailchimp = function 'addToMailchimp' '' 'Function' {
+              #document-symbol
+              link file:///./builderbook/builderbook/server/mailchimp.js:25:16
+              }
+
+
+            modelsDir = scope 'Models Folder' 'builderbook:DotDot/DotDot/dist/server/models/' {
+              #scope, #level-5
+
+              emailtemplate_getemailtemplate = function 'getEmailTemplate' '' 'Function' {
+                #document-symbol
+                link file:///./builderbook/builderbook/server/models/EmailTemplate.js:56:16
+                }
+
+
+              emailtemplate_inserttemplates = function 'insertTemplates' '' 'Function' {
+                #document-symbol
+                link file:///./builderbook/builderbook/server/models/EmailTemplate.js:24:16
+                }
+
+              }
+
+
+            routeswithslug_export_ = function 'routesWithSlug' '' 'Function' {
+              #document-symbol
+              link file:///./builderbook/builderbook/server/routesWithSlug.js:1:10
+              }
+
+
+            sitemapandrobots_export_ = function 'setupSitemapAndRobots' '' 'Function' {
+              #document-symbol
+              link file:///./builderbook/builderbook/server/sitemapAndRobots.js:10:10
+              }
+
+
+            stripe_createsession = function 'createSession' '' 'Function' {
+              #document-symbol
+              link file:///./builderbook/builderbook/server/stripe.js:34:10
+              }
+
+
+            stripe_stripecheckoutcallback = function 'stripeCheckoutCallback' '' 'Function' {
+              #document-symbol
+              link file:///./builderbook/builderbook/server/stripe.js:53:10
+              }
+
+
+            utilsDir = scope 'Utils Folder' 'builderbook:DotDot/DotDot/dist/server/utils/' {
+              #scope, #level-5, #single-child
+
+              slugify_export_ = function 'generateSlug' '' 'Function' {
+                #document-symbol
+                link file:///./builderbook/builderbook/server/utils/slugify.js:15:16
+                }
+
+              }
+
+            }
+
+          }
+
+        }
+
+      }
+
+    }
+
+  dataProj = scope 'Data Proj' '.dataProj' {
+    #scope, #level-0
+
+    componentsDir = folder 'Components Folder' 'dataProjcomponents/' {
+      #scope, #level-1
+
+      adminDir = scope 'Admin Folder' 'dataProjcomponents/admin/' {
+        #scope, #level-2, #single-child
+
+        editbookJsx_3balivhltvcgdn6lkrpzzw__ = property 'notify' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.notify_default "notify" to connect from' 'Property' {
+          #unknown
+          link file:///./builderbook/builderbook/components/admin/EditBook.jsx:11:8
+          }
+
+        }
+
+
+      customerDir = folder 'Customer Folder' 'dataProjcomponents/customer/' {
+        #scope, #level-2, #single-child
+
+        buybuttonJsx_koofjiv4gbg5_y0ir8jjwa__ = property 'notify' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.notify_default "notify" to connect from' 'Property' {
+          #unknown
+          link file:///./builderbook/builderbook/components/customer/BuyButton.jsx:9:8
+          }
+
+        }
+
+      }
+
+
+    libDir = scope 'Lib Folder' 'dataProjlib/' {
+      #scope, #level-1, #single-child
+
+      apiDir = scope 'Api Folder' 'dataProjlib/api/' {
+        #scope, #level-2
+
+        adminJs_sgwh3o1nbrbwfczuj7lbma__ = property 'sendRequest' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default "sendRequest" to connect from' 'Property' {
+          #unknown
+          link file:///./builderbook/builderbook/lib/api/admin.js:1:8
+          }
+
+
+        customerJs_Kpvrq_H6Dy3GFxuDiBesg__ = property 'sendRequest' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default "sendRequest" to connect from' 'Property' {
+          #unknown
+          link file:///./builderbook/builderbook/lib/api/customer.js:1:8
+          }
+
+
+        publicJs_rrca8ewnuzekwdh4cinbba__ = property 'sendRequest' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default "sendRequest" to connect from' 'Property' {
+          #unknown
+          link file:///./builderbook/builderbook/lib/api/public.js:1:8
+          }
+
+        }
+
+      }
+
+
+    pagesDir = folder 'Pages Folder' 'dataProjpages/' {
+      #scope, #level-1
+
+      adminDir = scope 'Admin Folder' 'dataProjpages/admin/' {
+        #scope, #level-2
+
+        add-bookJsx_llrugwicxkayrw5rqumaca__ = function 'AddBook' '' 'Function' {
+          #document-symbol
+          link file:///./builderbook/builderbook/pages/admin/add-book.jsx:10:10
+          }
+
+
+        add-bookJsx_rm3eajqlp9vsy7ps_FiYMQ__ = property 'notify' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.notify_default "notify" to connect from' 'Property' {
+          #unknown
+          link file:///./builderbook/builderbook/pages/admin/add-book.jsx:8:8
+          }
+
+
+        book-detailJsx__1xvh8sv5s4btfukin1f_a__ = property 'notify' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.notify_default "notify" to connect from' 'Property' {
+          #unknown
+          link file:///./builderbook/builderbook/pages/admin/book-detail.jsx:10:8
+          }
+
+
+        book-detailJsx_emph1xkmjp8vgg4jvzrecw__ = function 'BookDetail' '' 'Function' {
+          #document-symbol
+          link file:///./builderbook/builderbook/pages/admin/book-detail.jsx:16:10
+          }
+
+
+        edit-bookJsx_kzdkjt6seyyouzb4ceovcq__ = property 'notify' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.notify_default "notify" to connect from' 'Property' {
+          #unknown
+          link file:///./builderbook/builderbook/pages/admin/edit-book.jsx:10:8
+          }
+
+
+        edit-bookJsx_uvh875cgoh_sq5vlknv2rw__ = function 'EditBookPage' '' 'Function' {
+          #document-symbol
+          link file:///./builderbook/builderbook/pages/admin/edit-book.jsx:16:10
+          }
+
+
+        indexJsx_encmttl7hhtq1qdh5t_hwa__ = function 'Index' '' 'Function' {
+          #document-symbol
+          link file:///./builderbook/builderbook/pages/admin/index.jsx:22:10
+          }
+
+
+        indexJsx_ixbrpofj2sewfxr31ozutw__ = property 'notify' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.notify_default "notify" to connect from' 'Property' {
+          #unknown
+          link file:///./builderbook/builderbook/pages/admin/index.jsx:8:8
+          }
+
+
+        indexJsx_yhl5qoll0io5bjcqxldcqa__ = function 'IndexWithData' '' 'Function' {
+          #document-symbol
+          link file:///./builderbook/builderbook/pages/admin/index.jsx:63:10
+          }
+
+        }
+
+
+      customerDir = folder 'Customer Folder' 'dataProjpages/customer/' {
+        #scope, #level-2, #single-child
+
+        my-booksJsx_e374xkb7a85jhc1x7u8dea__ = function 'MyBooks' '' 'Function' {
+          #document-symbol
+          link file:///./builderbook/builderbook/pages/customer/my-books.jsx:21:10
+          }
+
+        }
+
+
+      indexJsx_hnlv20qztcytb2_UXbKxiQ__ = class 'Index' '' 'Class' {
+        #document-symbol
+        link file:///./builderbook/builderbook/pages/index.jsx:19:7
+        }
+
+
+      publicDir = scope 'Public Folder' 'dataProjpages/public/' {
+        #scope, #level-2
+
+        loginJsx_inwwau_y78wpym_8XL1aOw__ = function 'Login' '' 'Function' {
+          #document-symbol
+          link file:///./builderbook/builderbook/pages/public/login.jsx:16:10
+          }
+
+
+        read-chapterJsx_cb7l7_lopi6nldkaoblj5q__ = property 'chapter' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.public_getchapterdetailapimethod "getChapterDetailApiMethod" to connect from' 'Property' {
+          #unknown
+          link file:///./builderbook/builderbook/pages/public/read-chapter.jsx:358:9
+          }
+
+
+        read-chapterJsx_iejfozdc0pnthtzpxshxpg__ = function 'ReadChapterFunctional' '' 'Function' {
+          #document-symbol
+          link file:///./builderbook/builderbook/pages/public/read-chapter.jsx:26:10
+          }
+
+
+        read-chapterJsx_sj2bk2jy4dyumq_htnzmyq__ = property 'notify' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.notify_default "notify" to connect from' 'Property' {
+          #unknown
+          link file:///./builderbook/builderbook/pages/public/read-chapter.jsx:18:8
+          }
+
+        }
+
+      }
+
+
+    serverDir = scope 'Server Folder' 'dataProjserver/' {
+      #scope, #level-1
+
+      apiDir = scope 'Api Folder' 'dataProjserver/api/' {
+        #scope, #level-2
+
+        adminJs_o_zsvh1y1s3rqcdgqoqcwg__ = property 'repos' 'Unknown element added for relation to dataProj.serverDir.apiDir.adminJs_uf4wtokpksxtjdzzlhzo3a__ "response" to connect from' 'Property' {
+          #unknown
+          link file:///./builderbook/builderbook/server/api/admin.js:69:16
+          }
+
+
+        adminJs_uf4wtokpksxtjdzzlhzo3a__ = property 'response' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir.github_getrepos "getRepos" to connect from' 'Property' {
+          #unknown
+          link file:///./builderbook/builderbook/server/api/admin.js:68:11
+          }
+
+
+        customerJs_0ng4wkldvrhavavw2gxn3a__ = property 'sessionId' 'Unknown element added for relation to dataProj.serverDir.apiDir.customerJs_ku947mjuuwe8lnubuohd_A__ "session" to connect from' 'Property' {
+          #unknown
+          link file:///./builderbook/builderbook/server/api/customer.js:42:16
+          }
+
+
+        customerJs_ku947mjuuwe8lnubuohd_A__ = property 'session' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir.stripe_createsession "createSession" to connect from' 'Property' {
+          #unknown
+          link file:///./builderbook/builderbook/server/api/customer.js:34:11
+          }
+
+        }
+
+
+      githubJs_7ike3vqpgti6rnvf32mrkq__ = function 'getAPI' '' 'Function' {
+        #document-symbol
+        link file:///./builderbook/builderbook/server/github.js:113:10
+        }
+
+
+      mailchimpJs_uwlgcgl4_FRvJghrg0zw1w__ = function 'callAPI' '' 'Function' {
+        #document-symbol
+        link file:///./builderbook/builderbook/server/mailchimp.js:10:10
+        }
+
+
+      modelsDir = scope 'Models Folder' 'dataProjserver/models/' {
+        #scope, #level-2
+
+        bookJs_y_D4XcIbELd7RHXQPtXJiw__ = class 'BookClass' '' 'Class' {
+          #document-symbol
+          link file:///./builderbook/builderbook/server/models/Book.js:43:7
+          }
+
+
+        chapterJs_bdxxt_5zopflcqozrx2cjg__ = function 'markdownToHtml' '' 'Function' {
+          #document-symbol
+          link file:///./builderbook/builderbook/server/models/Chapter.js:11:10
+          }
+
+
+        chapterJs_kt_DJAY9CBdAe_Hugu9R1A__ = function 'getSections' '' 'Function' {
+          #document-symbol
+          link file:///./builderbook/builderbook/server/models/Chapter.js:76:10
+          }
+
+
+        chapterJs_qshuabqin__qw4xuBXDG3w__ = class 'ChapterClass' '' 'Class' {
+          #document-symbol
+          link file:///./builderbook/builderbook/server/models/Chapter.js:162:7
+          }
+
+
+        userJs_rgvq3fw2hoxcqfc7palzlq__ = class 'UserClass' '' 'Class' {
+          #document-symbol
+          link file:///./builderbook/builderbook/server/models/User.js:58:7
+          }
+
+        }
+
+
+      serverJs_lrjxzl9mmvie9tbofg7rbg__ = property 'ROOT_URL' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.getrooturl_export_ "getRootUrl" to connect from' 'Property' {
+        #unknown
+        link file:///./builderbook/builderbook/server/server.js:40:7
+        }
+
+
+      sitemapandrobotsJs_v6t8wiu3jertzqzcrbnljw__ = property 'ROOT_URL' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.getrooturl_export_ "getRootUrl" to connect from' 'Property' {
+        #unknown
+        link file:///./builderbook/builderbook/server/sitemapAndRobots.js:8:7
+        }
+
+
+      stripeJs_rnaviy6xp05ukn_wrxsexg__ = property 'ROOT_URL' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.getrooturl_export_ "getRootUrl" to connect from' 'Property' {
+        #unknown
+        link file:///./builderbook/builderbook/server/stripe.js:12:7
+        }
+
+
+      stripeJs_u9zcrhn7n4idjruadn0fmg__ = function 'getBookPriceId' '' 'Function' {
+        #document-symbol
+        link file:///./builderbook/builderbook/server/stripe.js:16:10
+        }
+
+
+      stripeJs_vamdmqz6_ehjydncnxs_DA__ = function 'retrieveSession' '' 'Function' {
+        #document-symbol
+        link file:///./builderbook/builderbook/server/stripe.js:47:10
+        }
+
+
+      utilsDir = scope 'Utils Folder' 'dataProjserver/utils/' {
+        #scope, #level-2, #single-child
+
+        slugifyJs_rkfc_Us1rJLNFI4ROdN0dA__ = function 'createUniqueSlug' '' 'Function' {
+          #document-symbol
+          link file:///./builderbook/builderbook/server/utils/slugify.js:5:16
+          }
+
+        }
+
+      }
+
+
+    testDir = scope 'Test Folder' 'dataProjtest/' {
+      #scope, #level-1, #single-child
+
+      serverDir = scope 'Server Folder' 'dataProjtest/server/' {
+        #scope, #level-2, #single-child
+
+        utilsDir = scope 'Utils Folder' 'dataProjtest/server/utils/' {
+          #scope, #level-3, #single-child
+
+          slugifyDotTestJs_mtjlsst3nzi32_NDgiuaYg__ = method 'MockUser' '' 'Method' {
+            #document-symbol, #test
+            link file:///./builderbook/builderbook/test/server/utils/slugify.test.js:3:7
+            }
+
+          }
+
+        }
+
+      }
+
+    }
+
+  builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.getrooturl_export_ 'reference' {#reference}
+  dataProj.serverDir.stripeJs_rnaviy6xp05ukn_wrxsexg__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.getrooturl_export_ 'reference' {#reference}
+  dataProj.serverDir.sitemapandrobotsJs_v6t8wiu3jertzqzcrbnljw__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.getrooturl_export_ 'reference' {#reference}
+  dataProj.serverDir.serverJs_lrjxzl9mmvie9tbofg7rbg__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.getrooturl_export_ 'reference' {#reference}
+  dataProj.libDir.apiDir.adminJs_sgwh3o1nbrbwfczuj7lbma__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default 'reference' {#reference}
+  builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.admin_getbooklistapimethod -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default 'reference' {#reference}
+  builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.admin_addbookapimethod -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default 'reference' {#reference}
+  builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.admin_editbookapimethod -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default 'reference' {#reference}
+  builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.admin_getbookdetailapimethod -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default 'reference' {#reference}
+  builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.admin_getgithubreposapimethod -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default 'reference' {#reference}
+  builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.admin_syncbookcontentapimethod -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default 'reference' {#reference}
+  dataProj.libDir.apiDir.customerJs_Kpvrq_H6Dy3GFxuDiBesg__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default 'reference' {#reference}
+  builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.customer_fetchcheckoutsessionapimethod -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default 'reference' {#reference}
+  builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.customer_getmybooklistapimethod -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default 'reference' {#reference}
+  dataProj.libDir.apiDir.publicJs_rrca8ewnuzekwdh4cinbba__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default 'reference' {#reference}
+  builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.public_getbookdetailapimethod -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default 'reference' {#reference}
+  builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.public_getchapterdetailapimethod -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default 'reference' {#reference}
+  dataProj.componentsDir.adminDir.editbookJsx_3balivhltvcgdn6lkrpzzw__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.notify_default 'reference' {#reference}
+  builderbookPkg.DotDotDir.DotDotDir.distDir.componentsDir.adminDir.editbookJsx_default -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.notify_default 'reference' {#reference}
+  dataProj.componentsDir.customerDir.buybuttonJsx_koofjiv4gbg5_y0ir8jjwa__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.notify_default 'reference' {#reference}
+  builderbookPkg.DotDotDir.DotDotDir.distDir.componentsDir.customerDir.buybuttonJsx_default -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.notify_default 'reference' {#reference}
+  dataProj.pagesDir.adminDir.add-bookJsx_rm3eajqlp9vsy7ps_FiYMQ__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.notify_default 'reference' {#reference}
+  dataProj.pagesDir.adminDir.add-bookJsx_llrugwicxkayrw5rqumaca__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.notify_default 'reference' {#reference}
+  dataProj.pagesDir.adminDir.book-detailJsx__1xvh8sv5s4btfukin1f_a__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.notify_default 'reference' {#reference}
+  dataProj.pagesDir.adminDir.book-detailJsx_emph1xkmjp8vgg4jvzrecw__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.notify_default 'reference' {#reference}
+  dataProj.pagesDir.adminDir.edit-bookJsx_kzdkjt6seyyouzb4ceovcq__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.notify_default 'reference' {#reference}
+  dataProj.pagesDir.adminDir.edit-bookJsx_uvh875cgoh_sq5vlknv2rw__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.notify_default 'reference' {#reference}
+  dataProj.pagesDir.adminDir.indexJsx_ixbrpofj2sewfxr31ozutw__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.notify_default 'reference' {#reference}
+  dataProj.pagesDir.adminDir.indexJsx_yhl5qoll0io5bjcqxldcqa__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.notify_default 'reference' {#reference}
+  dataProj.pagesDir.publicDir.read-chapterJsx_sj2bk2jy4dyumq_htnzmyq__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.notify_default 'reference' {#reference}
+  dataProj.pagesDir.publicDir.read-chapterJsx_iejfozdc0pnthtzpxshxpg__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.notify_default 'reference' {#reference}
+  dataProj.pagesDir.adminDir.indexJsx_yhl5qoll0io5bjcqxldcqa__ -> dataProj.pagesDir.adminDir.indexJsx_encmttl7hhtq1qdh5t_hwa__ 'reference' {#reference}
+  dataProj.serverDir.modelsDir.userJs_rgvq3fw2hoxcqfc7palzlq__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir.aws-ses_export_ 'reference' {#reference}
+  builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir.mailchimp_addtomailchimp -> dataProj.serverDir.mailchimpJs_uwlgcgl4_FRvJghrg0zw1w__ 'reference' {#reference}
+  dataProj.serverDir.modelsDir.userJs_rgvq3fw2hoxcqfc7palzlq__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir.mailchimp_addtomailchimp 'reference' {#reference}
+  dataProj.serverDir.modelsDir.bookJs_y_D4XcIbELd7RHXQPtXJiw__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir.mailchimp_addtomailchimp 'reference' {#reference}
+  builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir.utilsDir.slugify_export_ -> dataProj.serverDir.utilsDir.slugifyJs_rkfc_Us1rJLNFI4ROdN0dA__ 'reference' {#reference}
+  dataProj.serverDir.modelsDir.userJs_rgvq3fw2hoxcqfc7palzlq__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir.utilsDir.slugify_export_ 'reference' {#reference}
+  dataProj.serverDir.modelsDir.chapterJs_qshuabqin__qw4xuBXDG3w__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir.utilsDir.slugify_export_ 'reference' {#reference}
+  dataProj.serverDir.modelsDir.bookJs_y_D4XcIbELd7RHXQPtXJiw__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir.utilsDir.slugify_export_ 'reference' {#reference}
+  dataProj.serverDir.modelsDir.userJs_rgvq3fw2hoxcqfc7palzlq__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir.modelsDir.emailtemplate_getemailtemplate 'reference' {#reference}
+  builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir.github_getrepos -> dataProj.serverDir.githubJs_7ike3vqpgti6rnvf32mrkq__ 'reference' {#reference}
+  builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir.github_getrepodetail -> dataProj.serverDir.githubJs_7ike3vqpgti6rnvf32mrkq__ 'reference' {#reference}
+  builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir.github_getcommits -> dataProj.serverDir.githubJs_7ike3vqpgti6rnvf32mrkq__ 'reference' {#reference}
+  dataProj.serverDir.apiDir.adminJs_uf4wtokpksxtjdzzlhzo3a__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir.github_getrepos 'reference' {#reference}
+  dataProj.serverDir.modelsDir.bookJs_y_D4XcIbELd7RHXQPtXJiw__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir.github_getrepodetail 'reference' {#reference}
+  dataProj.serverDir.modelsDir.bookJs_y_D4XcIbELd7RHXQPtXJiw__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir.github_getcommits 'reference' {#reference}
+  dataProj.serverDir.modelsDir.chapterJs_qshuabqin__qw4xuBXDG3w__ -> dataProj.serverDir.modelsDir.chapterJs_bdxxt_5zopflcqozrx2cjg__ 'reference' {#reference}
+  dataProj.serverDir.modelsDir.chapterJs_qshuabqin__qw4xuBXDG3w__ -> dataProj.serverDir.modelsDir.chapterJs_kt_DJAY9CBdAe_Hugu9R1A__ 'reference' {#reference}
+  builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir.stripe_createsession -> dataProj.serverDir.stripeJs_u9zcrhn7n4idjruadn0fmg__ 'reference' {#reference}
+  dataProj.serverDir.apiDir.customerJs_ku947mjuuwe8lnubuohd_A__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir.stripe_createsession 'reference' {#reference}
+  builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir.stripe_stripecheckoutcallback -> dataProj.serverDir.stripeJs_vamdmqz6_ehjydncnxs_DA__ 'reference' {#reference}
+  builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir.stripe_createsession -> dataProj.serverDir.stripeJs_rnaviy6xp05ukn_wrxsexg__ 'reference' {#reference}
+  builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir.stripe_stripecheckoutcallback -> dataProj.serverDir.stripeJs_rnaviy6xp05ukn_wrxsexg__ 'reference' {#reference}
+  builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir.sitemapandrobots_export_ -> dataProj.serverDir.sitemapandrobotsJs_v6t8wiu3jertzqzcrbnljw__ 'reference' {#reference}
+  builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.admin_getbooklistapimethod -> dataProj.libDir.apiDir.adminJs_sgwh3o1nbrbwfczuj7lbma__ 'reference' {#reference}
+  builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.admin_addbookapimethod -> dataProj.libDir.apiDir.adminJs_sgwh3o1nbrbwfczuj7lbma__ 'reference' {#reference}
+  builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.admin_editbookapimethod -> dataProj.libDir.apiDir.adminJs_sgwh3o1nbrbwfczuj7lbma__ 'reference' {#reference}
+  builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.admin_getbookdetailapimethod -> dataProj.libDir.apiDir.adminJs_sgwh3o1nbrbwfczuj7lbma__ 'reference' {#reference}
+  builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.admin_getgithubreposapimethod -> dataProj.libDir.apiDir.adminJs_sgwh3o1nbrbwfczuj7lbma__ 'reference' {#reference}
+  builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.admin_syncbookcontentapimethod -> dataProj.libDir.apiDir.adminJs_sgwh3o1nbrbwfczuj7lbma__ 'reference' {#reference}
+  dataProj.pagesDir.adminDir.indexJsx_yhl5qoll0io5bjcqxldcqa__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.admin_getbooklistapimethod 'reference' {#reference}
+  dataProj.pagesDir.adminDir.add-bookJsx_llrugwicxkayrw5rqumaca__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.admin_addbookapimethod 'reference' {#reference}
+  dataProj.pagesDir.adminDir.edit-bookJsx_uvh875cgoh_sq5vlknv2rw__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.admin_editbookapimethod 'reference' {#reference}
+  dataProj.pagesDir.adminDir.book-detailJsx_emph1xkmjp8vgg4jvzrecw__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.admin_getbookdetailapimethod 'reference' {#reference}
+  dataProj.pagesDir.adminDir.edit-bookJsx_uvh875cgoh_sq5vlknv2rw__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.admin_getbookdetailapimethod 'reference' {#reference}
+  builderbookPkg.DotDotDir.DotDotDir.distDir.componentsDir.adminDir.editbookJsx_default -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.admin_getgithubreposapimethod 'reference' {#reference}
+  dataProj.pagesDir.adminDir.add-bookJsx_llrugwicxkayrw5rqumaca__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.admin_syncbookcontentapimethod 'reference' {#reference}
+  dataProj.pagesDir.adminDir.book-detailJsx_emph1xkmjp8vgg4jvzrecw__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.admin_syncbookcontentapimethod 'reference' {#reference}
+  builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.customer_fetchcheckoutsessionapimethod -> dataProj.libDir.apiDir.customerJs_Kpvrq_H6Dy3GFxuDiBesg__ 'reference' {#reference}
+  builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.customer_getmybooklistapimethod -> dataProj.libDir.apiDir.customerJs_Kpvrq_H6Dy3GFxuDiBesg__ 'reference' {#reference}
+  builderbookPkg.DotDotDir.DotDotDir.distDir.componentsDir.customerDir.buybuttonJsx_default -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.customer_fetchcheckoutsessionapimethod 'reference' {#reference}
+  builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.public_getbookdetailapimethod -> dataProj.libDir.apiDir.publicJs_rrca8ewnuzekwdh4cinbba__ 'reference' {#reference}
+  builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.public_getchapterdetailapimethod -> dataProj.libDir.apiDir.publicJs_rrca8ewnuzekwdh4cinbba__ 'reference' {#reference}
+  dataProj.pagesDir.publicDir.read-chapterJsx_cb7l7_lopi6nldkaoblj5q__ -> builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.public_getchapterdetailapimethod 'reference' {#reference}
+  builderbookPkg.DotDotDir.DotDotDir.distDir.componentsDir.adminDir.editbookJsx_default -> dataProj.componentsDir.adminDir.editbookJsx_3balivhltvcgdn6lkrpzzw__ 'reference' {#reference}
+  builderbookPkg.DotDotDir.DotDotDir.distDir.componentsDir.customerDir.buybuttonJsx_default -> dataProj.componentsDir.customerDir.buybuttonJsx_koofjiv4gbg5_y0ir8jjwa__ 'reference' {#reference}
+  dataProj.pagesDir.adminDir.add-bookJsx_llrugwicxkayrw5rqumaca__ -> dataProj.pagesDir.adminDir.add-bookJsx_rm3eajqlp9vsy7ps_FiYMQ__ 'reference' {#reference}
+  dataProj.pagesDir.adminDir.book-detailJsx_emph1xkmjp8vgg4jvzrecw__ -> dataProj.pagesDir.adminDir.book-detailJsx__1xvh8sv5s4btfukin1f_a__ 'reference' {#reference}
+  dataProj.pagesDir.adminDir.edit-bookJsx_uvh875cgoh_sq5vlknv2rw__ -> dataProj.pagesDir.adminDir.edit-bookJsx_kzdkjt6seyyouzb4ceovcq__ 'reference' {#reference}
+  dataProj.pagesDir.adminDir.indexJsx_yhl5qoll0io5bjcqxldcqa__ -> dataProj.pagesDir.adminDir.indexJsx_ixbrpofj2sewfxr31ozutw__ 'reference' {#reference}
+  dataProj.pagesDir.publicDir.read-chapterJsx_iejfozdc0pnthtzpxshxpg__ -> dataProj.pagesDir.publicDir.read-chapterJsx_sj2bk2jy4dyumq_htnzmyq__ 'reference' {#reference}
+  dataProj.serverDir.apiDir.adminJs_o_zsvh1y1s3rqcdgqoqcwg__ -> dataProj.serverDir.apiDir.adminJs_uf4wtokpksxtjdzzlhzo3a__ 'reference' {#reference}
+  dataProj.serverDir.apiDir.customerJs_0ng4wkldvrhavavw2gxn3a__ -> dataProj.serverDir.apiDir.customerJs_ku947mjuuwe8lnubuohd_A__ 'reference' {#reference}
+}
+
+views {
+  view index {
+    title 'Landscape'
+    include *
+  }
+
+  view indexFlat {
+    title 'Landscape (flat)'
+    include *, builderbookPkg.*, builderbookPkg.DotDotDir.*, builderbookPkg.DotDotDir.DotDotDir.*, builderbookPkg.DotDotDir.DotDotDir.distDir.*, builderbookPkg.DotDotDir.DotDotDir.distDir.componentsDir.*, builderbookPkg.DotDotDir.DotDotDir.distDir.componentsDir.adminDir.*, builderbookPkg.DotDotDir.DotDotDir.distDir.componentsDir.customerDir.*, builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.*, builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.*, builderbookPkg.DotDotDir.DotDotDir.distDir.pagesDir.*, builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir.*, builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir.apiDir.*, builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir.modelsDir.*, builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir.utilsDir.*, dataProj.*, dataProj.componentsDir.*, dataProj.componentsDir.adminDir.*, dataProj.componentsDir.customerDir.*, dataProj.libDir.*, dataProj.libDir.apiDir.*, dataProj.pagesDir.*, dataProj.pagesDir.adminDir.*, dataProj.pagesDir.customerDir.*, dataProj.pagesDir.publicDir.*, dataProj.serverDir.*, dataProj.serverDir.apiDir.*, dataProj.serverDir.modelsDir.*, dataProj.serverDir.utilsDir.*, dataProj.testDir.*, dataProj.testDir.serverDir.*, dataProj.testDir.serverDir.utilsDir.*
+    exclude element.tag = #scope	// Comment this line to nest within scopes
+  }
+
+  view indexShallow {
+    title 'Landscape (2 levels of folders)'
+    include *, builderbookPkg.*, builderbookPkg.DotDotDir.*, builderbookPkg.DotDotDir.DotDotDir.*, builderbookPkg.DotDotDir.DotDotDir.distDir.*, builderbookPkg.DotDotDir.DotDotDir.distDir.componentsDir.*, builderbookPkg.DotDotDir.DotDotDir.distDir.componentsDir.adminDir.*, builderbookPkg.DotDotDir.DotDotDir.distDir.componentsDir.customerDir.*, builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.*, builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.*, builderbookPkg.DotDotDir.DotDotDir.distDir.pagesDir.*, builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir.*, builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir.apiDir.*, builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir.modelsDir.*, builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir.utilsDir.*, dataProj.*, dataProj.componentsDir.*, dataProj.componentsDir.adminDir.*, dataProj.componentsDir.customerDir.*, dataProj.libDir.*, dataProj.libDir.apiDir.*, dataProj.pagesDir.*, dataProj.pagesDir.adminDir.*, dataProj.pagesDir.customerDir.*, dataProj.pagesDir.publicDir.*, dataProj.serverDir.*, dataProj.serverDir.apiDir.*, dataProj.serverDir.modelsDir.*, dataProj.serverDir.utilsDir.*, dataProj.testDir.*, dataProj.testDir.serverDir.*, dataProj.testDir.serverDir.utilsDir.*
+    exclude element.tag = #scope
+    include element.kind = package
+    include element.tag = #level-2, element.tag = #level-3
+    exclude element.tag = #test
+  }
+
+  view Builderbook-Package of builderbookPkg {
+    title 'Builderbook Package'
+    include *
+  }
+  view builderbookPkgDot-Dot-Folder of builderbookPkg.DotDotDir {
+    title 'Dot Dot Folder'
+    include *
+  }
+  view builderbookPkg-DotDotDirDot-Dot-Folder of builderbookPkg.DotDotDir.DotDotDir {
+    title 'Dot Dot Folder'
+    include *
+  }
+  view builderbookPkg-DotDotDir-DotDotDirDist-Folder of builderbookPkg.DotDotDir.DotDotDir.distDir {
+    title 'Dist Folder'
+    include *
+  }
+  view builderbookPkg-DotDotDir-DotDotDir-distDirComponents-Folder of builderbookPkg.DotDotDir.DotDotDir.distDir.componentsDir {
+    title 'Components Folder'
+    include *
+  }
+  view builderbookPkg-DotDotDir-DotDotDir-distDir-componentsDirAdmin-Folder of builderbookPkg.DotDotDir.DotDotDir.distDir.componentsDir.adminDir {
+    title 'Admin Folder'
+    include *
+  }
+  view builderbookPkg-DotDotDir-DotDotDir-distDir-componentsDirCustomer-Folder of builderbookPkg.DotDotDir.DotDotDir.distDir.componentsDir.customerDir {
+    title 'Customer Folder'
+    include *
+  }
+  view builderbookPkg-DotDotDir-DotDotDir-distDirLib-Folder of builderbookPkg.DotDotDir.DotDotDir.distDir.libDir {
+    title 'Lib Folder'
+    include *
+  }
+  view builderbookPkg-DotDotDir-DotDotDir-distDir-libDirApi-Folder of builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir {
+    title 'Api Folder'
+    include *
+  }
+  view builderbookPkg-DotDotDir-DotDotDir-distDirPages-Folder of builderbookPkg.DotDotDir.DotDotDir.distDir.pagesDir {
+    title 'Pages Folder'
+    include *
+  }
+  view builderbookPkg-DotDotDir-DotDotDir-distDirServer-Folder of builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir {
+    title 'Server Folder'
+    include *
+  }
+  view builderbookPkg-DotDotDir-DotDotDir-distDir-serverDirApi-Folder of builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir.apiDir {
+    title 'Api Folder'
+    include *
+  }
+  view builderbookPkg-DotDotDir-DotDotDir-distDir-serverDirModels-Folder of builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir.modelsDir {
+    title 'Models Folder'
+    include *
+  }
+  view builderbookPkg-DotDotDir-DotDotDir-distDir-serverDirUtils-Folder of builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir.utilsDir {
+    title 'Utils Folder'
+    include *
+  }
+  view Data-Proj of dataProj {
+    title 'Data Proj'
+    include *
+  }
+  view dataProjComponents-Folder of dataProj.componentsDir {
+    title 'Components Folder'
+    include *
+  }
+  view dataProj-componentsDirAdmin-Folder of dataProj.componentsDir.adminDir {
+    title 'Admin Folder'
+    include *
+  }
+  view dataProj-componentsDirCustomer-Folder of dataProj.componentsDir.customerDir {
+    title 'Customer Folder'
+    include *
+  }
+  view dataProjLib-Folder of dataProj.libDir {
+    title 'Lib Folder'
+    include *
+  }
+  view dataProj-libDirApi-Folder of dataProj.libDir.apiDir {
+    title 'Api Folder'
+    include *
+  }
+  view dataProjPages-Folder of dataProj.pagesDir {
+    title 'Pages Folder'
+    include *
+  }
+  view dataProj-pagesDirAdmin-Folder of dataProj.pagesDir.adminDir {
+    title 'Admin Folder'
+    include *
+  }
+  view dataProj-pagesDirCustomer-Folder of dataProj.pagesDir.customerDir {
+    title 'Customer Folder'
+    include *
+  }
+  view dataProj-pagesDirPublic-Folder of dataProj.pagesDir.publicDir {
+    title 'Public Folder'
+    include *
+  }
+  view dataProjServer-Folder of dataProj.serverDir {
+    title 'Server Folder'
+    include *
+  }
+  view dataProj-serverDirApi-Folder of dataProj.serverDir.apiDir {
+    title 'Api Folder'
+    include *
+  }
+  view dataProj-serverDirModels-Folder of dataProj.serverDir.modelsDir {
+    title 'Models Folder'
+    include *
+  }
+  view dataProj-serverDirUtils-Folder of dataProj.serverDir.utilsDir {
+    title 'Utils Folder'
+    include *
+  }
+  view dataProjTest-Folder of dataProj.testDir {
+    title 'Test Folder'
+    include *
+  }
+  view dataProj-testDirServer-Folder of dataProj.testDir.serverDir {
+    title 'Server Folder'
+    include *
+  }
+  view dataProj-testDir-serverDirUtils-Folder of dataProj.testDir.serverDir.utilsDir {
+    title 'Utils Folder'
+    include *
+  }
+}
+

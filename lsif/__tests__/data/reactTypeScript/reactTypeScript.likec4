@@ -1,0 +1,98 @@
+
+// LikeC4 DSL
+specification {
+  element folder
+  element function
+  element interface
+  element package
+  element scope
+  tag document-symbol
+  tag level-0
+  tag level-1
+  tag level-2
+  tag level-3
+  tag reference
+  tag scope
+  tag single-child
+  tag test
+}
+model {
+  react-typescript-samplePkg = package 'React-Typescript-Sample Package' 'react-typescript-sample:' {
+    #scope, #level-0, #single-child
+
+    _default = function 'MyApp' '' 'Function' {
+      #document-symbol
+      link file:///./reactTypeScript/App.tsx:16:27
+      }
+
+    }
+
+  reactTypeScriptProj = scope 'React Type Script Proj' '.reactTypeScriptProj' {
+    #scope, #level-0, #single-child
+
+    Dir = folder 'Folder' 'reactTypeScriptProj/' {
+      #scope, #level-1, #single-child
+
+      reacttypescriptDir = folder 'Reacttypescript Folder' 'reactTypeScriptProj/reacttypescript/' {
+        #scope, #level-2
+
+        appTsx_gm_4hLA_Trk2xCFh9UF5A__ = function 'MyButton' '' 'Function' {
+          #document-symbol
+          link file:///./reactTypeScript/App.tsx:10:12
+          }
+
+
+        appTsx_wotwq5qdyo_3b0cbytx4ha__ = interface 'MyButtonProps' '' 'Interface' {
+          #document-symbol
+          link file:///./reactTypeScript/App.tsx:3:11
+          }
+
+        }
+
+      }
+
+    }
+
+  reactTypeScriptProj.Dir.reacttypescriptDir.appTsx_gm_4hLA_Trk2xCFh9UF5A__ -> reactTypeScriptProj.Dir.reacttypescriptDir.appTsx_wotwq5qdyo_3b0cbytx4ha__ 'reference' {#reference}
+  react-typescript-samplePkg._default -> reactTypeScriptProj.Dir.reacttypescriptDir.appTsx_gm_4hLA_Trk2xCFh9UF5A__ 'reference' {#reference}
+}
+
+views {
+  view index {
+    title 'Landscape'
+    include *
+  }
+
+  view indexFlat {
+    title 'Landscape (flat)'
+    include *, react-typescript-samplePkg.*, reactTypeScriptProj.*, reactTypeScriptProj.Dir.*, reactTypeScriptProj.Dir.reacttypescriptDir.*
+    exclude element.tag = #scope	// Comment this line to nest within scopes
+  }
+
+  view indexShallow {
+    title 'Landscape (2 levels of folders)'
+    include *, react-typescript-samplePkg.*, reactTypeScriptProj.*, reactTypeScriptProj.Dir.*, reactTypeScriptProj.Dir.reacttypescriptDir.*
+    exclude element.tag = #scope
+    include element.kind = package
+    include element.tag = #level-2, element.tag = #level-3
+    exclude element.tag = #test
+  }
+
+  view React-Typescript-Sample-Package of react-typescript-samplePkg {
+    title 'React-Typescript-Sample Package'
+    include *
+  }
+  view React-Type-Script-Proj of reactTypeScriptProj {
+    title 'React Type Script Proj'
+    include *
+  }
+  view reactTypeScriptProjFolder of reactTypeScriptProj.Dir {
+    title 'Folder'
+    include *
+  }
+  view reactTypeScriptProj-DirReacttypescript-Folder of reactTypeScriptProj.Dir.reacttypescriptDir {
+    title 'Reacttypescript Folder'
+    include *
+  }
+}
+

@@ -49,7 +49,20 @@ import { SymbolKind } from "vscode-languageserver";
  */
 const folderRegex = /(?:Dir|_dir|\/|\\)(?:$|(?=.*:))/g;
 
+const typeSymbolKinds = [
+  SymbolKind.Class,
+  SymbolKind.Interface,
+  SymbolKind.Struct,
+  SymbolKind.Enum,
+  SymbolKind.TypeParameter,
+];
+const typeElementKinds = symbolKindsAsElementKinds(typeSymbolKinds);
+
+const typeAliasKind = "type-alias" as ElementKind;
+
+const includeOptionTag = "included-by-config" as Tag;
 const scopeTag = "scope" as Tag;
+const typeTag = "type" as Tag;
 
 /**
  * Regular expression used to match test files in a project.
@@ -242,20 +255,29 @@ function getSymbolKindName(kind: SymbolKind): string | undefined {
 
 /**
  * Converts a Hover object to a string representation of the documentation.
+ * Note: Excludes any lines that are embedded code.
  * @param hover The Hover object to convert.
  * @returns A string representation of the Hover object.
  */
-export const hoverToString = (hover: Hover) => {
+export const hoverToString = (
+  hover: Hover,
+): [text: string, code: string | undefined] | undefined => {
   if (MarkupContent.is(hover.contents)) {
-    return hover.contents.value;
+    return [hover.contents.value, undefined];
   }
 
   if (MarkedString.is(hover.contents)) {
-    return markedStringToString(hover.contents);
+    return [markedStringToString(hover.contents), undefined];
   }
 
   if (Array.isArray(hover.contents) && hover.contents.every(MarkedString.is)) {
-    return hover.contents.map(markedStringToString).join("\n");
+    return [
+      hover.contents.map(markedStringToString).join("\n"),
+      hover.contents
+        .map((o) => typeof o === "object" && o.value)
+        .filter((v) => v !== false)
+        .join("\n"),
+    ];
   }
 };
 
@@ -292,6 +314,12 @@ export const modelIndexToDsl = (model: ModelIndex) => {
       .concat(model.relations.flatMap((rel) => rel.tags ?? [])),
   );
   dsl.push(...[...tags].sort().map((tag) => `  tag ${tag}`));
+
+  const clutterKinds = symbolKindsAsElementKinds([
+    SymbolKind.Function,
+    SymbolKind.Method,
+    SymbolKind.Property,
+  ]).filter((k) => kinds.has(k as ElementKind));
 
   indent--;
   dsl.push(`}`);
@@ -388,11 +416,14 @@ export const modelIndexToDsl = (model: ModelIndex) => {
         )
         .join(", ")}`,
     );
-    dsl.push(
-      `${" ".repeat(
-        indent * indentSize,
-      )}exclude element.tag = #${scopeTag}\t// Comment this line to nest within scopes`,
-    );
+    if (tags.has(scopeTag)) {
+      dsl.push(
+        `${" ".repeat(
+          indent * indentSize,
+        )}exclude element.tag = #${scopeTag}\t// Comment this line to nest within scopes`,
+      );
+    }
+
     indent--;
     dsl.push(`${" ".repeat(indent * indentSize)}}`);
     dsl.push(``);
@@ -415,15 +446,59 @@ export const modelIndexToDsl = (model: ModelIndex) => {
         )
         .join(", ")}`,
     );
-    dsl.push(`${" ".repeat(indent * indentSize)}exclude element.tag = #${scopeTag}`);
-    dsl.push(`${" ".repeat(indent * indentSize)}include element.kind = package`);
+    if (tags.has(scopeTag)) {
+      dsl.push(`${" ".repeat(indent * indentSize)}exclude element.tag = #${scopeTag}`);
+    }
+
+    if (kinds.has("package" as ElementKind)) {
+      dsl.push(`${" ".repeat(indent * indentSize)}include element.kind = package`);
+    }
+
     dsl.push(
       `${" ".repeat(indent * indentSize)}include ${[...Array(maxLevel - minLevel + 1).keys()]
-
         .map((i) => `element.tag = #level-${i + minLevel}`)
         .join(", ")}`,
     );
-    dsl.push(`${" ".repeat(indent * indentSize)}exclude element.tag = #test`);
+
+    if (tags.has("test" as Tag)) {
+      dsl.push(`${" ".repeat(indent * indentSize)}exclude element.tag = #test`);
+    }
+
+    clutterKinds.forEach((kindName) => {
+      dsl.push(`${" ".repeat(indent * indentSize)}exclude element.kind = ${kindName}`);
+    });
+
+    indent--;
+    dsl.push(`${" ".repeat(indent * indentSize)}}`);
+    dsl.push(``);
+  }
+
+  if (kinds.has("widget" as ElementKind)) {
+    dsl.push(`${" ".repeat(indent * indentSize)}view indexWidgets {`);
+    indent++;
+
+    dsl.push(`${" ".repeat(indent * indentSize)}title 'Widgets'`);
+    dsl.push(`${" ".repeat(indent * indentSize)}include element.kind = widget`);
+
+    if (kinds.has("package" as ElementKind)) {
+      dsl.push(`${" ".repeat(indent * indentSize)}include element.kind = package`);
+    }
+
+    // Include any classes or interfaces that are referenced by widgets
+    if (tags.has(typeTag)) {
+      dsl.push(
+        `${" ".repeat(
+          indent * indentSize,
+        )}include element.kind = widget -> element.tag = #${typeTag}`,
+      );
+    } else if (kinds.has("function" as ElementKind)) {
+      dsl.push(
+        `${" ".repeat(
+          indent * indentSize,
+        )}include element.kind = widget -> element.kind != function`,
+      );
+    }
+
     indent--;
     dsl.push(`${" ".repeat(indent * indentSize)}}`);
     dsl.push(``);
@@ -565,6 +640,25 @@ export const readJsonl = async function* (
 };
 
 /**
+ * Converts a SymbolKind to an ElementKind.
+ * @param kind The SymbolKind to convert.
+ * @returns The corresponding ElementKind, or undefined if there is no match.
+ */
+function symbolKindAsElementKind(kind: SymbolKind): ElementKind | undefined {
+  const kindName = getSymbolKindName(kind);
+  return (kindName && dasherize(underscore(kindName))) as ElementKind | undefined;
+}
+
+/**
+ * Maps an array of `SymbolKind` values to an array of `ElementKind` values.
+ * @param list An array of `SymbolKind` values to map.
+ * @returns An array of `ElementKind` values.
+ */
+function symbolKindsAsElementKinds(list: SymbolKind[]): ElementKind[] {
+  return list.map(symbolKindAsElementKind).filter((k) => k !== undefined) as ElementKind[];
+}
+
+/**
  * Updates the package map with the given path name and package name. Fetches the project name from the moniker location, and
  * updates the package root map if the path name is a suffix of the document uri.
  * @param pathName - The path name to remove from the file location.
@@ -651,11 +745,17 @@ const argv = yargs(hideBin(process.argv))
         normalize: true,
         coerce: coerceFile,
       })
+      .option("include", {
+        type: "string",
+        description:
+          "Regex to include additional classes in the diagram that would not be included automatically",
+        coerce: (input) => new RegExp(input),
+      })
       .option("logLevel", {
         type: "string",
         default: "info",
         description: "Level of detail to log",
-        choices: Object.values(pino.levels.labels)
+        choices: Object.values(pino.levels.labels),
       })
       .option("scopes", {
         default: true,
@@ -675,6 +775,7 @@ const argv = yargs(hideBin(process.argv))
   .version()
   .alias("v", "version")
   .parseSync() as Arguments<{
+  include: RegExp | undefined;
   input: ReturnType<typeof coerceFile>;
   logLevel: pino.LevelWithSilent;
   scopes: boolean;
@@ -709,6 +810,8 @@ for await (const line of argv.input.lines) {
     if (Range.is(line) && line.tag?.type === RangeTagTypes.definition) {
       if (line.tag.text === "FunctionComponent") {
         componentTypeRanges.FunctionComponent = line;
+      } else if (line.tag.text === "FC") {
+        componentTypeRanges.FC = line;
       } else if (line.tag.text === "ClassComponent") {
         componentTypeRanges.ClassComponent = line;
       } else if (line.tag.text === "PureComponent") {
@@ -717,6 +820,8 @@ for await (const line of argv.input.lines) {
         componentTypeRanges.ComponentType = line;
       } else if (line.tag.text === "Component") {
         componentTypeRanges.Component = line;
+      } else if (line.tag.text === "Element") {
+        componentTypeRanges.Element = line;
       }
     } else if (moniker.is(line)) {
       if (monikerIndexIn[line.inV as number]) {
@@ -883,13 +988,44 @@ function processDefinitionRange(
     tags.push("test" as Tag);
   }
 
-  const hoverText = hoverToString(hover?.result);
+  const [hoverText, hoverCode] = (hover && hoverToString(hover.result)) ?? [];
+
+  const symbolName = definitionRange.tag?.text ?? tscMoniker.identifier.split(":").pop();
+
+  logger.debug(
+    `kind '${kind}' symbolName '${symbolName}' hoverText '${
+      hoverCode ?? hoverText
+    }' match ${Boolean(hoverCode && new RegExp(`type\\s+${symbolName}`).test(hoverCode))} kind ${
+      kind === symbolKindAsElementKind(SymbolKind.Property) ? "===" : "!=="
+    } '${symbolKindAsElementKind(SymbolKind.Property)}' hover.result '${JSON.stringify(
+      hover?.result,
+    )}'`,
+  );
+  if (typeElementKinds.includes(kind)) {
+    tags.push(typeTag);
+  } else if (
+    hoverCode &&
+    new RegExp(
+      `type\\s+${symbolName}`, // Match TypeScript type aliases, which otherwise get marked as properties
+    ).test(hoverCode)
+  ) {
+    tags.push(typeTag);
+
+    kind = symbolName.startsWith("I")
+      ? symbolKindAsElementKind(SymbolKind.Interface) ?? kind
+      : typeAliasKind;
+
+    if (technology === titleize(symbolKindAsElementKind(SymbolKind.Property) ?? "")) {
+      technology = titleize(kind.replace("-", "_"));
+    }
+  }
+
   addElement(model, {
     description: hoverText && hoverText !== "" ? hoverText : defaultDescription ?? "",
     links: [inputStore.getLinkFromRange(definitionRange)],
     kind,
     id: newId,
-    technology: technology ?? null,
+    technology,
     title:
       definitionRange.tag?.text ??
       titleize(underscore(tscMoniker.identifier.split(":").pop() ?? "Unknown")),
@@ -915,6 +1051,36 @@ buildPackageMap(inputStore);
 Object.values(componentTypeRanges).map((r) =>
   processTypeDefinitionReferences(r, ["widget" as Tag, "component" as Tag, "react" as Tag]),
 );
+
+// Apply custom inclusions, if any
+const { include } = argv; // TypeScript wasn't smart enough to figure out that the if meant argv.include was defined, until I moved it to a constant
+if (include !== undefined) {
+  (
+    (inputStore.getVerticesWithLabel(VertexLabels.moniker) as Moniker[])
+      .filter((m) => include.test(m.identifier))
+      .flatMap((m) => inputStore.getRangesForMoniker(m))
+      .filter((r) => r !== undefined && DefinitionRange.is(r)) as DefinitionRange[]
+  ).forEach((d) =>
+    processDefinitionRange(d, {
+      ...getElementDefaultsForSymbolKind(d.tag?.kind, "unknown" as ElementKind),
+      tags: [includeOptionTag],
+    }),
+  );
+}
+
+/**
+ * Returns the default element kind and technology for a given symbol kind.
+ * @param kind The symbol kind to get the defaults for.
+ * @param fallback The fallback element kind to use if the symbol kind is not recognized.
+ * @returns An object containing the default element kind and technology.
+ */
+function getElementDefaultsForSymbolKind(kind: SymbolKind, fallback: ElementKind) {
+  const kindName = getSymbolKindName(kind);
+  return {
+    kind: symbolKindAsElementKind(kind) ?? fallback,
+    technology: titleize(kindName ?? fallback),
+  };
+}
 
 // Add all remaining elements to the model
 inputStore.getDocumentInfos().forEach((docInfo) => {
@@ -943,11 +1109,9 @@ inputStore.getDocumentInfos().forEach((docInfo) => {
       return;
     }
 
-    const kindName = underscore(getSymbolKindName(symbol.kind) ?? "document-symbol");
     processDefinitionRange(definitionRange, {
-      kind: dasherize(kindName) as ElementKind,
+      ...getElementDefaultsForSymbolKind(symbol.kind, "document-symbol" as ElementKind),
       tags: ["document-symbol" as Tag],
-      technology: titleize(kindName),
     });
   });
 });
@@ -1038,16 +1202,19 @@ elementDefinitionRanges.forEach((reference, id) => {
             tags.push("test" as Tag);
           }
 
-          const kindName = underscore(getSymbolKindName(definitionRange.tag.kind) ?? "unknown");
-          const description = `Unknown element added for relation to ${id} "${reference.tag?.text}" to connect from`;
+          const kindDefaults = getElementDefaultsForSymbolKind(
+            definitionRange.tag.kind,
+            "unknown" as ElementKind,
+          );
+          const description = `Unknown element added for relation to "${reference.tag?.text}" to connect from`;
 
           if (
             !processDefinitionRange(
               definitionRange,
               {
-                kind: dasherize(kindName) as ElementKind,
+                kind: kindDefaults.kind,
                 tags,
-                technology: kindName === "unknown" ? null : titleize(kindName),
+                technology: kindDefaults.kind === "unknown" ? null : kindDefaults.technology,
               },
               {
                 defaultDescription: description,
@@ -1091,5 +1258,5 @@ logger.debug(
 
 // Output the model
 
-console.log("\n// LikeC4 DSL")
+console.log(`\n// LikeC4 DSL for ${argv.input.path}`)
 console.log(modelIndexToDsl(model));

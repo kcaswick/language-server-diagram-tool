@@ -1,5 +1,5 @@
 
-// LikeC4 DSL
+// LikeC4 DSL for lsif/__tests__/data/reactTypeScript/reactTypeScript.lsif.jsonl
 specification {
   element folder
   element function
@@ -10,11 +10,10 @@ specification {
   tag level-0
   tag level-1
   tag level-2
-  tag level-3
   tag reference
   tag scope
   tag single-child
-  tag test
+  tag type
 }
 model {
   react-typescript-samplePkg = package 'React-Typescript-Sample Package' 'react-typescript-sample:' {
@@ -43,7 +42,7 @@ model {
 
 
         appTsx_wotwq5qdyo_3b0cbytx4ha__ = interface 'MyButtonProps' '' 'Interface' {
-          #document-symbol
+          #document-symbol, #type
           link file:///./reactTypeScript/App.tsx:3:11
           }
 
@@ -74,8 +73,8 @@ views {
     include *, react-typescript-samplePkg.*, reactTypeScriptProj.*, reactTypeScriptProj.Dir.*, reactTypeScriptProj.Dir.reacttypescriptDir.*
     exclude element.tag = #scope
     include element.kind = package
-    include element.tag = #level-2, element.tag = #level-3
-    exclude element.tag = #test
+    include element.tag = #level-0, element.tag = #level-2
+    exclude element.kind = function
   }
 
   view React-Typescript-Sample-Package of react-typescript-samplePkg {

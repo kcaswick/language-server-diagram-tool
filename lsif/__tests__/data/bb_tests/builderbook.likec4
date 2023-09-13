@@ -1,5 +1,5 @@
 
-// LikeC4 DSL
+// LikeC4 DSL for lsif/__tests__/data/builderbook.lsif.jsonl
 specification {
   element class
   element folder
@@ -19,6 +19,7 @@ specification {
   tag scope
   tag single-child
   tag test
+  tag type
   tag unknown
 }
 model {
@@ -41,7 +42,7 @@ model {
               #scope, #level-5, #single-child
 
               editbookJsx_default = class 'EditBook' '' 'Class' {
-                #document-symbol
+                #document-symbol, #type
                 link file:///./builderbook/builderbook/components/admin/EditBook.jsx:24:7
                 }
 
@@ -52,7 +53,7 @@ model {
               #scope, #level-5, #single-child
 
               buybuttonJsx_default = class 'BuyButton' '' 'Class' {
-                #document-symbol
+                #document-symbol, #type
                 link file:///./builderbook/builderbook/components/customer/BuyButton.jsx:46:7
                 }
 
@@ -66,13 +67,13 @@ model {
 
 
             menuwithavatarJsx_default = class 'MenuWithAvatar' '' 'Class' {
-              #document-symbol
+              #document-symbol, #type
               link file:///./builderbook/builderbook/components/MenuWithAvatar.jsx:14:7
               }
 
 
             notifierJsx_default = class 'Notifier' '' 'Class' {
-              #document-symbol
+              #document-symbol, #type
               link file:///./builderbook/builderbook/components/Notifier.jsx:6:7
               }
 
@@ -91,49 +92,49 @@ model {
             apiDir = scope 'Api Folder' 'builderbook:DotDot/DotDot/dist/lib/api/' {
               #scope, #level-5
 
-              admin_addbookapimethod = property 'addBookApiMethod' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default "sendRequest" to connect from' 'Property' {
+              admin_addbookapimethod = property 'addBookApiMethod' 'Unknown element added for relation to "sendRequest" to connect from' 'Property' {
                 #unknown
                 link file:///./builderbook/builderbook/lib/api/admin.js:10:14
                 }
 
 
-              admin_editbookapimethod = property 'editBookApiMethod' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default "sendRequest" to connect from' 'Property' {
+              admin_editbookapimethod = property 'editBookApiMethod' 'Unknown element added for relation to "sendRequest" to connect from' 'Property' {
                 #unknown
                 link file:///./builderbook/builderbook/lib/api/admin.js:15:14
                 }
 
 
-              admin_getbookdetailapimethod = property 'getBookDetailApiMethod' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default "sendRequest" to connect from' 'Property' {
+              admin_getbookdetailapimethod = property 'getBookDetailApiMethod' 'Unknown element added for relation to "sendRequest" to connect from' 'Property' {
                 #unknown
                 link file:///./builderbook/builderbook/lib/api/admin.js:25:14
                 }
 
 
-              admin_getbooklistapimethod = property 'getBookListApiMethod' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default "sendRequest" to connect from' 'Property' {
+              admin_getbooklistapimethod = property 'getBookListApiMethod' 'Unknown element added for relation to "sendRequest" to connect from' 'Property' {
                 #unknown
                 link file:///./builderbook/builderbook/lib/api/admin.js:5:14
                 }
 
 
-              admin_getgithubreposapimethod = property 'getGithubReposApiMethod' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default "sendRequest" to connect from' 'Property' {
+              admin_getgithubreposapimethod = property 'getGithubReposApiMethod' 'Unknown element added for relation to "sendRequest" to connect from' 'Property' {
                 #unknown
                 link file:///./builderbook/builderbook/lib/api/admin.js:32:14
                 }
 
 
-              admin_syncbookcontentapimethod = property 'syncBookContentApiMethod' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default "sendRequest" to connect from' 'Property' {
+              admin_syncbookcontentapimethod = property 'syncBookContentApiMethod' 'Unknown element added for relation to "sendRequest" to connect from' 'Property' {
                 #unknown
                 link file:///./builderbook/builderbook/lib/api/admin.js:37:14
                 }
 
 
-              customer_fetchcheckoutsessionapimethod = property 'fetchCheckoutSessionApiMethod' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default "sendRequest" to connect from' 'Property' {
+              customer_fetchcheckoutsessionapimethod = property 'fetchCheckoutSessionApiMethod' 'Unknown element added for relation to "sendRequest" to connect from' 'Property' {
                 #unknown
                 link file:///./builderbook/builderbook/lib/api/customer.js:5:14
                 }
 
 
-              customer_getmybooklistapimethod = property 'getMyBookListApiMethod' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default "sendRequest" to connect from' 'Property' {
+              customer_getmybooklistapimethod = property 'getMyBookListApiMethod' 'Unknown element added for relation to "sendRequest" to connect from' 'Property' {
                 #unknown
                 link file:///./builderbook/builderbook/lib/api/customer.js:10:14
                 }
@@ -145,13 +146,13 @@ model {
                 }
 
 
-              public_getbookdetailapimethod = property 'getBookDetailApiMethod' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default "sendRequest" to connect from' 'Property' {
+              public_getbookdetailapimethod = property 'getBookDetailApiMethod' 'Unknown element added for relation to "sendRequest" to connect from' 'Property' {
                 #unknown
                 link file:///./builderbook/builderbook/lib/api/public.js:5:14
                 }
 
 
-              public_getchapterdetailapimethod = property 'getChapterDetailApiMethod' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default "sendRequest" to connect from' 'Property' {
+              public_getchapterdetailapimethod = property 'getChapterDetailApiMethod' 'Unknown element added for relation to "sendRequest" to connect from' 'Property' {
                 #unknown
                 link file:///./builderbook/builderbook/lib/api/public.js:10:14
                 }
@@ -322,7 +323,7 @@ model {
       adminDir = scope 'Admin Folder' 'dataProjcomponents/admin/' {
         #scope, #level-2, #single-child
 
-        editbookJsx_3balivhltvcgdn6lkrpzzw__ = property 'notify' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.notify_default "notify" to connect from' 'Property' {
+        editbookJsx_3balivhltvcgdn6lkrpzzw__ = property 'notify' 'Unknown element added for relation to "notify" to connect from' 'Property' {
           #unknown
           link file:///./builderbook/builderbook/components/admin/EditBook.jsx:11:8
           }
@@ -333,7 +334,7 @@ model {
       customerDir = folder 'Customer Folder' 'dataProjcomponents/customer/' {
         #scope, #level-2, #single-child
 
-        buybuttonJsx_koofjiv4gbg5_y0ir8jjwa__ = property 'notify' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.notify_default "notify" to connect from' 'Property' {
+        buybuttonJsx_koofjiv4gbg5_y0ir8jjwa__ = property 'notify' 'Unknown element added for relation to "notify" to connect from' 'Property' {
           #unknown
           link file:///./builderbook/builderbook/components/customer/BuyButton.jsx:9:8
           }
@@ -349,19 +350,19 @@ model {
       apiDir = scope 'Api Folder' 'dataProjlib/api/' {
         #scope, #level-2
 
-        adminJs_sgwh3o1nbrbwfczuj7lbma__ = property 'sendRequest' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default "sendRequest" to connect from' 'Property' {
+        adminJs_sgwh3o1nbrbwfczuj7lbma__ = property 'sendRequest' 'Unknown element added for relation to "sendRequest" to connect from' 'Property' {
           #unknown
           link file:///./builderbook/builderbook/lib/api/admin.js:1:8
           }
 
 
-        customerJs_Kpvrq_H6Dy3GFxuDiBesg__ = property 'sendRequest' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default "sendRequest" to connect from' 'Property' {
+        customerJs_Kpvrq_H6Dy3GFxuDiBesg__ = property 'sendRequest' 'Unknown element added for relation to "sendRequest" to connect from' 'Property' {
           #unknown
           link file:///./builderbook/builderbook/lib/api/customer.js:1:8
           }
 
 
-        publicJs_rrca8ewnuzekwdh4cinbba__ = property 'sendRequest' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.sendrequest_default "sendRequest" to connect from' 'Property' {
+        publicJs_rrca8ewnuzekwdh4cinbba__ = property 'sendRequest' 'Unknown element added for relation to "sendRequest" to connect from' 'Property' {
           #unknown
           link file:///./builderbook/builderbook/lib/api/public.js:1:8
           }
@@ -383,13 +384,13 @@ model {
           }
 
 
-        add-bookJsx_rm3eajqlp9vsy7ps_FiYMQ__ = property 'notify' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.notify_default "notify" to connect from' 'Property' {
+        add-bookJsx_rm3eajqlp9vsy7ps_FiYMQ__ = property 'notify' 'Unknown element added for relation to "notify" to connect from' 'Property' {
           #unknown
           link file:///./builderbook/builderbook/pages/admin/add-book.jsx:8:8
           }
 
 
-        book-detailJsx__1xvh8sv5s4btfukin1f_a__ = property 'notify' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.notify_default "notify" to connect from' 'Property' {
+        book-detailJsx__1xvh8sv5s4btfukin1f_a__ = property 'notify' 'Unknown element added for relation to "notify" to connect from' 'Property' {
           #unknown
           link file:///./builderbook/builderbook/pages/admin/book-detail.jsx:10:8
           }
@@ -401,7 +402,7 @@ model {
           }
 
 
-        edit-bookJsx_kzdkjt6seyyouzb4ceovcq__ = property 'notify' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.notify_default "notify" to connect from' 'Property' {
+        edit-bookJsx_kzdkjt6seyyouzb4ceovcq__ = property 'notify' 'Unknown element added for relation to "notify" to connect from' 'Property' {
           #unknown
           link file:///./builderbook/builderbook/pages/admin/edit-book.jsx:10:8
           }
@@ -419,7 +420,7 @@ model {
           }
 
 
-        indexJsx_ixbrpofj2sewfxr31ozutw__ = property 'notify' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.notify_default "notify" to connect from' 'Property' {
+        indexJsx_ixbrpofj2sewfxr31ozutw__ = property 'notify' 'Unknown element added for relation to "notify" to connect from' 'Property' {
           #unknown
           link file:///./builderbook/builderbook/pages/admin/index.jsx:8:8
           }
@@ -445,7 +446,7 @@ model {
 
 
       indexJsx_hnlv20qztcytb2_UXbKxiQ__ = class 'Index' '' 'Class' {
-        #document-symbol
+        #document-symbol, #type
         link file:///./builderbook/builderbook/pages/index.jsx:19:7
         }
 
@@ -459,7 +460,7 @@ model {
           }
 
 
-        read-chapterJsx_cb7l7_lopi6nldkaoblj5q__ = property 'chapter' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.public_getchapterdetailapimethod "getChapterDetailApiMethod" to connect from' 'Property' {
+        read-chapterJsx_cb7l7_lopi6nldkaoblj5q__ = property 'chapter' 'Unknown element added for relation to "getChapterDetailApiMethod" to connect from' 'Property' {
           #unknown
           link file:///./builderbook/builderbook/pages/public/read-chapter.jsx:358:9
           }
@@ -471,7 +472,7 @@ model {
           }
 
 
-        read-chapterJsx_sj2bk2jy4dyumq_htnzmyq__ = property 'notify' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.notify_default "notify" to connect from' 'Property' {
+        read-chapterJsx_sj2bk2jy4dyumq_htnzmyq__ = property 'notify' 'Unknown element added for relation to "notify" to connect from' 'Property' {
           #unknown
           link file:///./builderbook/builderbook/pages/public/read-chapter.jsx:18:8
           }
@@ -487,25 +488,25 @@ model {
       apiDir = scope 'Api Folder' 'dataProjserver/api/' {
         #scope, #level-2
 
-        adminJs_o_zsvh1y1s3rqcdgqoqcwg__ = property 'repos' 'Unknown element added for relation to dataProj.serverDir.apiDir.adminJs_uf4wtokpksxtjdzzlhzo3a__ "response" to connect from' 'Property' {
+        adminJs_o_zsvh1y1s3rqcdgqoqcwg__ = property 'repos' 'Unknown element added for relation to "response" to connect from' 'Property' {
           #unknown
           link file:///./builderbook/builderbook/server/api/admin.js:69:16
           }
 
 
-        adminJs_uf4wtokpksxtjdzzlhzo3a__ = property 'response' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir.github_getrepos "getRepos" to connect from' 'Property' {
+        adminJs_uf4wtokpksxtjdzzlhzo3a__ = property 'response' 'Unknown element added for relation to "getRepos" to connect from' 'Property' {
           #unknown
           link file:///./builderbook/builderbook/server/api/admin.js:68:11
           }
 
 
-        customerJs_0ng4wkldvrhavavw2gxn3a__ = property 'sessionId' 'Unknown element added for relation to dataProj.serverDir.apiDir.customerJs_ku947mjuuwe8lnubuohd_A__ "session" to connect from' 'Property' {
+        customerJs_0ng4wkldvrhavavw2gxn3a__ = property 'sessionId' 'Unknown element added for relation to "session" to connect from' 'Property' {
           #unknown
           link file:///./builderbook/builderbook/server/api/customer.js:42:16
           }
 
 
-        customerJs_ku947mjuuwe8lnubuohd_A__ = property 'session' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.serverDir.stripe_createsession "createSession" to connect from' 'Property' {
+        customerJs_ku947mjuuwe8lnubuohd_A__ = property 'session' 'Unknown element added for relation to "createSession" to connect from' 'Property' {
           #unknown
           link file:///./builderbook/builderbook/server/api/customer.js:34:11
           }
@@ -529,7 +530,7 @@ model {
         #scope, #level-2
 
         bookJs_y_D4XcIbELd7RHXQPtXJiw__ = class 'BookClass' '' 'Class' {
-          #document-symbol
+          #document-symbol, #type
           link file:///./builderbook/builderbook/server/models/Book.js:43:7
           }
 
@@ -547,32 +548,32 @@ model {
 
 
         chapterJs_qshuabqin__qw4xuBXDG3w__ = class 'ChapterClass' '' 'Class' {
-          #document-symbol
+          #document-symbol, #type
           link file:///./builderbook/builderbook/server/models/Chapter.js:162:7
           }
 
 
         userJs_rgvq3fw2hoxcqfc7palzlq__ = class 'UserClass' '' 'Class' {
-          #document-symbol
+          #document-symbol, #type
           link file:///./builderbook/builderbook/server/models/User.js:58:7
           }
 
         }
 
 
-      serverJs_lrjxzl9mmvie9tbofg7rbg__ = property 'ROOT_URL' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.getrooturl_export_ "getRootUrl" to connect from' 'Property' {
+      serverJs_lrjxzl9mmvie9tbofg7rbg__ = property 'ROOT_URL' 'Unknown element added for relation to "getRootUrl" to connect from' 'Property' {
         #unknown
         link file:///./builderbook/builderbook/server/server.js:40:7
         }
 
 
-      sitemapandrobotsJs_v6t8wiu3jertzqzcrbnljw__ = property 'ROOT_URL' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.getrooturl_export_ "getRootUrl" to connect from' 'Property' {
+      sitemapandrobotsJs_v6t8wiu3jertzqzcrbnljw__ = property 'ROOT_URL' 'Unknown element added for relation to "getRootUrl" to connect from' 'Property' {
         #unknown
         link file:///./builderbook/builderbook/server/sitemapAndRobots.js:8:7
         }
 
 
-      stripeJs_rnaviy6xp05ukn_wrxsexg__ = property 'ROOT_URL' 'Unknown element added for relation to builderbookPkg.DotDotDir.DotDotDir.distDir.libDir.apiDir.getrooturl_export_ "getRootUrl" to connect from' 'Property' {
+      stripeJs_rnaviy6xp05ukn_wrxsexg__ = property 'ROOT_URL' 'Unknown element added for relation to "getRootUrl" to connect from' 'Property' {
         #unknown
         link file:///./builderbook/builderbook/server/stripe.js:12:7
         }
@@ -730,6 +731,9 @@ views {
     include element.kind = package
     include element.tag = #level-2, element.tag = #level-3
     exclude element.tag = #test
+    exclude element.kind = function
+    exclude element.kind = method
+    exclude element.kind = property
   }
 
   view Builderbook-Package of builderbookPkg {

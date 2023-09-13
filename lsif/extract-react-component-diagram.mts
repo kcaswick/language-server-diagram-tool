@@ -349,13 +349,18 @@ export const modelIndexToDsl = (model: ModelIndex) => {
   const containerElements: C4Element[] = [];
 
   const toElementDsl = (el: C4Element, model: ModelIndex, indent = 0) => {
-    const isBlock = el.tags;
+    const children = model.children(el.id).sort((a, b) => a.id.localeCompare(b.id));
+    const isBlock = Boolean(el.tags || el.links || children);
     const dsl = [
       `${" ".repeat(indent * indentSize)}${nameFromFqn(el.id)} = ${el.kind} '${el.title}'${
         el.description || el.technology ? ` '${el.description}'` : ""
-      }${el.technology ? ` '${el.technology}'` : ""}${isBlock ? " {" : ""}`,
+      }${el.technology ? ` '${el.technology}'` : ""}`,
     ];
-    indent += 1;
+    if (isBlock) {
+      dsl[0] += " {";
+      indent++;
+    }
+
     if (el.tags) {
       dsl.push(`${" ".repeat(indent * indentSize)}${el.tags.map((tag) => `#${tag}`).join(", ")}`);
     }
@@ -367,7 +372,6 @@ export const modelIndexToDsl = (model: ModelIndex) => {
     // TODO: Write the rest of the element properties, if present
 
     // Write child elements, if present
-    const children = model.children(el.id).sort((a, b) => a.id.localeCompare(b.id));
     if (children?.length > 0) {
       containerElements.push(el);
     }
@@ -378,6 +382,7 @@ export const modelIndexToDsl = (model: ModelIndex) => {
     });
 
     if (isBlock) {
+      indent--;
       dsl.push(`${" ".repeat(indent * indentSize)}}`);
       dsl.push(``);
     }

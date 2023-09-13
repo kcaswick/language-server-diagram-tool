@@ -73,7 +73,7 @@ views {
     include *, react-typescript-samplePkg.*, reactTypeScriptProj.*, reactTypeScriptProj.Dir.*, reactTypeScriptProj.Dir.reacttypescriptDir.*
     exclude element.tag = #scope
     include element.kind = package
-    include element.tag = #level-0, element.tag = #level-2
+    include element.tag = #level-2, element.tag = #level-3
     exclude element.kind = function
   }
 

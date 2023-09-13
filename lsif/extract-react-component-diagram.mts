@@ -33,7 +33,7 @@ import path from "node:path";
 import pino from "pino";
 import readline from "readline";
 import { A, M } from "ts-toolbelt";
-import { Hover, MarkupContent, MarkedString } from "vscode-languageserver-protocol";
+import { Hover, MarkupContent, MarkedString, DocumentSymbol } from "vscode-languageserver-protocol";
 import yargs, { Arguments } from "yargs";
 import { hideBin } from "yargs/helpers";
 import { $, fs } from "zx";
@@ -41,6 +41,7 @@ import { $, fs } from "zx";
 import { noopTransformer } from "./lsif-server-modules/database";
 import { JsonStoreEnhanced, locationToLink, locationToString } from "./jsonStoreEnhanced";
 import { SymbolKind } from "vscode-languageserver";
+import { DocumentInfo } from "./lsif-server-modules/files";
 
 /**
  * Regular expression used to match folder names in a file path or moniker.
@@ -213,6 +214,20 @@ function buildPackageMap(store: JsonStoreEnhanced) {
       ([k, v]) => `${k} -> base '${packageBaseMap.get(k)}' root ${v}`,
     ),
   );
+}
+
+/**
+ * Returns the default element kind and technology for a given symbol kind.
+ * @param kind The symbol kind to get the defaults for.
+ * @param fallback The fallback element kind to use if the symbol kind is not recognized.
+ * @returns An object containing the default element kind and technology.
+ */
+function getElementDefaultsForSymbolKind(kind: SymbolKind, fallback: ElementKind) {
+  const kindName = getSymbolKindName(kind);
+  return {
+    kind: symbolKindAsElementKind(kind) ?? fallback,
+    technology: titleize(kindName ?? fallback),
+  };
 }
 
 /**
@@ -1050,6 +1065,43 @@ function processDefinitionRange(
   );
   return true;
 }
+
+/**
+ * Processes a document symbol and its definition range.
+ * 
+ * @param docInfo - The document information object.
+ * @param symbol - The document symbol to process.
+ * @returns void
+ */
+function processDocumentSymbol(docInfo: DocumentInfo, symbol: DocumentSymbol): void {
+    const symbolLink = locationToLink({ uri: docInfo.uri, range: symbol.range });
+    logger.debug("document symbol", symbol, symbolLink);
+    const definitionRanges = inputStore.findFullRangesFromPosition(docInfo.uri, symbol.range.start);
+
+    logger.debug(
+      "definitionRanges",
+      definitionRanges,
+      definitionRanges?.map((r) => inputStore.getLinkFromRange(r))
+    );
+
+    const definitionRange = definitionRanges?.[0];
+    logger.debug(`definitionRange for document symbol`, definitionRange);
+
+    if (definitionRange === undefined || !DefinitionRange.is(definitionRange)) {
+      logger.error(
+        `ERROR: No definition range found for document symbol`,
+        symbol.name,
+        `at ${symbolLink}`
+      );
+      return;
+    }
+
+    processDefinitionRange(definitionRange, {
+      ...getElementDefaultsForSymbolKind(symbol.kind, "document-symbol" as ElementKind),
+      tags: ["document-symbol" as Tag],
+    });
+}
+
 // #endregion Processing functions
 
 const inputStore = new JsonStoreEnhanced(logger.child({ jsonStore: "input"}));
@@ -1068,6 +1120,15 @@ Object.values(componentTypeRanges).map((r) =>
   processTypeDefinitionReferences(r, ["widget" as Tag, "component" as Tag, "react" as Tag]),
 );
 
+// Add all document symbols to the model
+inputStore.getDocumentInfos().forEach((docInfo) => {
+  // TODO: Add documents themselves
+
+  inputStore
+    .documentSymbols(docInfo.uri)
+    ?.forEach((symbol) => processDocumentSymbol(docInfo, symbol));
+});
+
 // Apply custom inclusions, if any
 const { include } = argv; // TypeScript wasn't smart enough to figure out that the if meant argv.include was defined, until I moved it to a constant
 if (include !== undefined) {
@@ -1083,54 +1144,6 @@ if (include !== undefined) {
     }),
   );
 }
-
-/**
- * Returns the default element kind and technology for a given symbol kind.
- * @param kind The symbol kind to get the defaults for.
- * @param fallback The fallback element kind to use if the symbol kind is not recognized.
- * @returns An object containing the default element kind and technology.
- */
-function getElementDefaultsForSymbolKind(kind: SymbolKind, fallback: ElementKind) {
-  const kindName = getSymbolKindName(kind);
-  return {
-    kind: symbolKindAsElementKind(kind) ?? fallback,
-    technology: titleize(kindName ?? fallback),
-  };
-}
-
-// Add all remaining elements to the model
-inputStore.getDocumentInfos().forEach((docInfo) => {
-  // TODO: Add documents themselves
-
-  inputStore.documentSymbols(docInfo.uri)?.forEach((symbol) => {
-    const symbolLink = locationToLink({ uri: docInfo.uri, range: symbol.range });
-    logger.debug("document symbol", symbol, symbolLink);
-    const definitionRanges = inputStore.findFullRangesFromPosition(docInfo.uri, symbol.range.start);
-
-    logger.debug(
-      "definitionRanges",
-      definitionRanges,
-      definitionRanges?.map((r) => inputStore.getLinkFromRange(r)),
-    );
-
-    const definitionRange = definitionRanges?.[0];
-    logger.debug(`definitionRange for document symbol`, definitionRange);
-
-    if (definitionRange === undefined || !DefinitionRange.is(definitionRange)) {
-      logger.error(
-        `ERROR: No definition range found for document symbol`,
-        symbol.name,
-        `at ${symbolLink}`,
-      );
-      return;
-    }
-
-    processDefinitionRange(definitionRange, {
-      ...getElementDefaultsForSymbolKind(symbol.kind, "document-symbol" as ElementKind),
-      tags: ["document-symbol" as Tag],
-    });
-  });
-});
 
 // Add all the references between elements that were included in the model as relationships
 

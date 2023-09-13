@@ -1,5 +1,5 @@
 
-// LikeC4 DSL for lsif/__tests__/data/builderbook.lsif.jsonl
+// LikeC4 DSL for lsif/__tests__/data/bb_tests/builderbook.lsif.jsonl
 specification {
   element class
   element folder

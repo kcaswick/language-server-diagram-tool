@@ -16,6 +16,7 @@ import {
   VertexLabels,
 } from "lsif-protocol";
 import { monikerUniqueShortForms } from "lsif-sqlite/lib/compress";
+import { pino } from "pino";
 
 type In = JsonStore["in"] & {
   attach: Map<Id, Moniker>;
@@ -38,6 +39,8 @@ export class JsonStoreEnhanced extends JsonStore {
     return this["in"] as In;
   }
 
+  private logger;
+ 
   protected get outEnhanced() {
     return this["out"] as Out;
   }
@@ -49,8 +52,13 @@ export class JsonStoreEnhanced extends JsonStore {
     property?: ItemEdgeProperties | undefined,
   ) => void;
 
-  constructor() {
+  constructor(logger: pino.Logger<pino.LoggerOptions & {
+    customLevels: {
+        debugJsonStore: number;
+    };}>) {
     super();
+
+    this.logger = logger;
 
     this.inEnhanced.attach = new Map();
     this.inEnhanced.next = new Map();
@@ -180,15 +188,15 @@ export class JsonStoreEnhanced extends JsonStore {
 
   public getMonikerFromRange(range: Range) {
     const resultPath = this["getResultPath"](range.id, this["out"].references);
-    // Debugging disabled- console.debug(
-    //   "resultPath.path",
-    //   resultPath.path.map(
-    //     (p) =>
-    //       `vertex: ${p.vertex} -> moniker: #${p.moniker?.id} scheme: ${p.moniker?.scheme} '${p.moniker?.identifier}' kind: ${p.moniker?.kind} unique: ${p.moniker?.unique}`,
-    //   ),
-    //   "resultPath.result",
-    //   resultPath.result,
-    // );
+    this.logger.debugJsonStore(
+      "resultPath.path",
+      resultPath.path.map(
+        (p) =>
+          `vertex: ${p.vertex} -> moniker: #${p.moniker?.id} scheme: ${p.moniker?.scheme} '${p.moniker?.identifier}' kind: ${p.moniker?.kind} unique: ${p.moniker?.unique}`,
+      ),
+      "resultPath.result",
+      resultPath.result,
+    );
     if (resultPath.result === undefined) {
       return;
     }
@@ -203,11 +211,11 @@ export class JsonStoreEnhanced extends JsonStore {
 
     // Check for additional resultSets
     const resultSets = this["in"].moniker.get(moniker.id);
-    // Disable debug output - console.debug("resultSets", resultSets);
+    this.logger.debugJsonStore("resultSets", resultSets);
     const resultSetFilter = (v: Vertex): boolean => v.label === VertexLabels.resultSet;
     resultSets?.forEach((resultSet) => {
       const nextResultSets = (this.inEnhanced.next.get(resultSet.id) ?? []).filter(resultSetFilter);
-      // Disable debug output - console.debug("nextResultSets", nextResultSets);
+      this.logger.debugJsonStore("nextResultSets", nextResultSets);
       while (nextResultSets.length > 0) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- We just checked the array has elements above
         const nextResultSet = nextResultSets.pop()!;
@@ -216,7 +224,8 @@ export class JsonStoreEnhanced extends JsonStore {
         }
 
         const moniker = this["out"].moniker.get(nextResultSet.id);
-        // Disable debug output - console.debug("moniker", moniker);
+        // Disable debug output - 
+        this.logger.debugJsonStore("moniker", moniker);
         if (moniker !== undefined) {
           results.push(moniker);
           this.followAttachEdges(moniker, results);
@@ -225,7 +234,7 @@ export class JsonStoreEnhanced extends JsonStore {
         nextResultSets.push(
           ...(this.inEnhanced.next.get(nextResultSet.id) ?? []).filter(resultSetFilter),
         );
-        // Disable debug output - console.debug("nextResultSets after push", nextResultSets);
+        this.logger.debugJsonStore("nextResultSets after push", nextResultSets);
       }
     });
 
@@ -261,12 +270,11 @@ export class JsonStoreEnhanced extends JsonStore {
         containers.project = this["in"].contains.get(containers.document.id) as Project;
       }
 
-      // Debugging disabled-
-      // console.debug("containers", {
-      //   document: String(containers.document?.uri),
-      //   project: String(containers.project?.name),
-      //   workspace: String(containers.workspace?.href),
-      // });
+      this.logger.debugJsonStore("containers", {
+        document: String(containers.document?.uri),
+        project: String(containers.project?.name),
+        workspace: String(containers.workspace?.href),
+      });
     });
 
     return containers;
@@ -280,7 +288,7 @@ export class JsonStoreEnhanced extends JsonStore {
     }
 
     // Debugging disabled-
-    // console.debug("vertices", vertices);
+    // this.logger.debugJsonStore("vertices", vertices);
     if (vertices === undefined) {
       return [];
     }
@@ -288,7 +296,7 @@ export class JsonStoreEnhanced extends JsonStore {
     return vertices.flatMap((vertex) => {
       const resultPath = this["getResultPath"](vertex.id, this.inEnhanced.next);
       // Debugging disabled-
-      // console.debug(
+      // this.logger.debugJsonStore(
       //   `getRangesForMoniker '${moniker.identifier}' vertex`,
       //   vertex,
       //   "resultPath.path",

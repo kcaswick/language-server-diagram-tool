@@ -74,13 +74,16 @@ const testRegex =
 const testFolderRegex = /__tests__|Tests|__mocks__|MocksDir|[Ss]toriesDir/;
 
 const logger = pino({
+  customLevels: {
+    debugJsonStore: pino.levels.values.debug - 20,
+  },
   hooks: {
     logMethod(args, method, _level) {
       if (args.length > 1 && typeof args[0] === "string" && !args[0].includes("%")) {
         args[0] += " %O".repeat(args.length - 1);
-        method.apply(this, args)
+        method.apply(this, args);
       } else {
-        method.apply(this, args)
+        method.apply(this, args);
       }
     },
   },
@@ -755,7 +758,7 @@ const argv = yargs(hideBin(process.argv))
         type: "string",
         default: "info",
         description: "Level of detail to log",
-        choices: Object.values(pino.levels.labels),
+        choices: Object.values(logger.levels.labels),
       })
       .option("scopes", {
         default: true,
@@ -1036,7 +1039,7 @@ function processDefinitionRange(
 }
 // #endregion Processing functions
 
-const inputStore = new JsonStoreEnhanced();
+const inputStore = new JsonStoreEnhanced(logger.child({ jsonStore: "input"}));
 await inputStore.load(argv.input.path, () => noopTransformer);
 
 // Process the model and add all React components to the model

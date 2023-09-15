@@ -181,6 +181,11 @@ export class JsonStoreEnhanced extends JsonStore {
     )[0];
   }
 
+  /**
+   * Returns the monikers associated with the given package by a packageInformation edge.
+   * @param pkg The package information or vertex to get the monikers for.
+   * @returns An array of monikers associated with the package. Returns an empty array if no monikers are found.
+   */
   public getMonikersForPackage(pkg: PackageInformation | Vertex) {
     const monikers = this["inEnhanced"].packageInformation.get(pkg.id);
     return monikers ?? [];

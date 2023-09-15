@@ -9,6 +9,7 @@ import type {
   RelationID,
   Tag,
 } from "@likec4/core";
+import { default as fs } from "fs-extra";
 import { camelize, dasherize, humanize, titleize, underscore } from "inflection";
 import {
   DefinitionRange,
@@ -18,10 +19,10 @@ import {
   HoverResult,
   ItemEdgeProperties,
   Moniker,
+  PackageInformation,
   Range,
   RangeTagTypes,
   UniquenessLevel,
-  Vertex,
   VertexLabels,
   item,
   moniker,
@@ -36,7 +37,6 @@ import { A, M } from "ts-toolbelt";
 import { Hover, MarkupContent, MarkedString, DocumentSymbol } from "vscode-languageserver-protocol";
 import yargs, { Arguments } from "yargs";
 import { hideBin } from "yargs/helpers";
-import { $, fs } from "zx";
 
 import { noopTransformer } from "./lsif-server-modules/database";
 import { JsonStoreEnhanced, locationToLink, locationToString } from "./jsonStoreEnhanced";
@@ -79,6 +79,7 @@ const logger = pino({
     debugJsonStore: pino.levels.values.debug - 20,
   },
   hooks: {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     logMethod(args, method, _level) {
       if (args.length > 1 && typeof args[0] === "string" && !args[0].includes("%")) {
         args[0] += " %O".repeat(args.length - 1);
@@ -174,38 +175,59 @@ export const addElementsForScopes = (
 };
 
 function buildPackageMap(store: JsonStoreEnhanced) {
-  const packages = store.getVerticesWithLabel(VertexLabels.packageInformation);
+  const packages = store.getVerticesWithLabel(
+    VertexLabels.packageInformation,
+  ) as PackageInformation[];
 
   packages.forEach((pkg) => {
     const monikers = store.getMonikersForPackage(pkg);
 
+    const unsuccessfulMonikerNames: string[] = [];
     const match = monikers
       .sort((a, b) => a.identifier.length - b.identifier.length)
       .find((moniker) => {
         if (moniker.scheme === "npm") {
-          return updatePackageMap(moniker);
+          const isFound = updatePackageMap(moniker);
+          if (logger.isLevelEnabled("debug")) {
+            if (isFound) {
+              logger.debug(
+                `[buildPackageMap] Package '${pkg.name}': Package root found for moniker '${moniker.identifier}'`,
+              );
+            } else {
+              unsuccessfulMonikerNames.push(moniker.identifier);
+            }
+          }
+
+          return isFound;
         }
 
         logger.warn(`Unexpected moniker scheme ${moniker.scheme} for ${moniker.identifier}`);
         return false;
       });
+    if (!match && logger.isLevelEnabled("debug")) {
+      logger.debug(
+        `[buildPackageMap] Package '${
+          pkg.name
+        }': No package root found for monikers ['${unsuccessfulMonikerNames.join("', '")}']`,
+      );
+    }
 
-    // This doesn't make sense, how would we know the package name to use?
-    // if (!match) {
-    //   const containers = inputStore.getContainersForMoniker(monikers[0]);
-    //   if (containers !== undefined) {
-    //     if (
-    //       containers.project &&
-    //       containers.project.resource &&
-    //       path.dirname(containers.project.resource).length > 1
-    //     ) {
-    //       packageRootMap.set(packageName, path.dirname(containers.project.resource));
-    //       logger.debug(
-    //         `packageRootMap.set('${packageName}', '${packageRoot}') ${pathName} ${sourcePathName}`,
-    //       );
-    //     }
-    //   }
-    // }
+    if (!match && monikers[0].kind !== "import") {
+      const containers = inputStore.getContainersForMoniker(monikers[0]);
+      if (containers !== undefined) {
+        if (
+          containers.project &&
+          containers.project.resource &&
+          path.dirname(containers.project.resource).length > 1
+        ) {
+          const packageRoot = path.dirname(containers.project.resource);
+          packageRootMap.set(pkg.name, packageRoot);
+          logger.debug(
+            `packageRootMap.set('${pkg.name}', '${packageRoot}') from '${containers.project.resource}'`,
+          );
+        }
+      }
+    }
   });
 
   logger.debug(
@@ -569,7 +591,6 @@ export const modelIndexToDsl = (model: ModelIndex) => {
   return dsl.join("\n");
 };
 
-
 /**
  * Replaces file extensions and periods in a given identifier with underscores.
  * @param identifier - The identifier to strip extensions from.
@@ -694,10 +715,11 @@ function symbolKindsAsElementKinds(list: SymbolKind[]): ElementKind[] {
  */
 function updatePackageMap(moniker: Moniker) {
   let isRootFound = false;
-  const [packageName, pathName] = moniker.identifier.split(":");
   const containers = inputStore.getContainersForMoniker(moniker);
   if (containers !== undefined) {
     if (containers.document) {
+      const [packageName, pathName] = moniker.identifier.split(":");
+
       // Try to get the pathname without any lib/ or dist/ folder prefix
       // TODO: Handle more than one level of prefix
       const sourcePathName = pathName.split("/").slice(1).join("/");
@@ -944,7 +966,7 @@ function processTypeDefinitionReferences(range: Range, tags: [Tag, ...Tag[]]) {
       logger.debug(
         "definitionRanges",
         definitionRanges,
-        definitionRanges?.map((r) => inputStore.getLinkFromRange(r))
+        definitionRanges?.map((r) => inputStore.getLinkFromRange(r)),
       );
 
       // {"id":503,"type":"vertex","label":"range","start":{"line":32,"character":13},"end":{"line":32,"character":20},"tag":{"type":"definition","text":"Feature","kind":7,"fullRange":{"start":{"line":32,"character":13},"end":{"line":34,"character":19}}}}
@@ -1062,6 +1084,7 @@ function processDefinitionRange(
       tags,
     });
   }
+
   elementDefinitionRanges.set(
     newId,
     elementDefinitionRangeList
@@ -1073,43 +1096,43 @@ function processDefinitionRange(
 
 /**
  * Processes a document symbol and its definition range.
- * 
+ *
  * @param docInfo - The document information object.
  * @param symbol - The document symbol to process.
  * @returns void
  */
 function processDocumentSymbol(docInfo: DocumentInfo, symbol: DocumentSymbol): void {
-    const symbolLink = locationToLink({ uri: docInfo.uri, range: symbol.range });
-    logger.debug("document symbol", symbol, symbolLink);
-    const definitionRanges = inputStore.findFullRangesFromPosition(docInfo.uri, symbol.range.start);
+  const symbolLink = locationToLink({ uri: docInfo.uri, range: symbol.range });
+  logger.debug("document symbol", symbol, symbolLink);
+  const definitionRanges = inputStore.findFullRangesFromPosition(docInfo.uri, symbol.range.start);
 
-    logger.debug(
-      "definitionRanges",
-      definitionRanges,
-      definitionRanges?.map((r) => inputStore.getLinkFromRange(r))
+  logger.debug(
+    "definitionRanges",
+    definitionRanges,
+    definitionRanges?.map((r) => inputStore.getLinkFromRange(r)),
+  );
+
+  const definitionRange = definitionRanges?.[0];
+  logger.debug(`definitionRange for document symbol`, definitionRange);
+
+  if (definitionRange === undefined || !DefinitionRange.is(definitionRange)) {
+    logger.error(
+      `ERROR: No definition range found for document symbol`,
+      symbol.name,
+      `at ${symbolLink}`,
     );
+    return;
+  }
 
-    const definitionRange = definitionRanges?.[0];
-    logger.debug(`definitionRange for document symbol`, definitionRange);
-
-    if (definitionRange === undefined || !DefinitionRange.is(definitionRange)) {
-      logger.error(
-        `ERROR: No definition range found for document symbol`,
-        symbol.name,
-        `at ${symbolLink}`
-      );
-      return;
-    }
-
-    processDefinitionRange(definitionRange, {
-      ...getElementDefaultsForSymbolKind(symbol.kind, "document-symbol" as ElementKind),
-      tags: ["document-symbol" as Tag],
-    });
+  processDefinitionRange(definitionRange, {
+    ...getElementDefaultsForSymbolKind(symbol.kind, "document-symbol" as ElementKind),
+    tags: ["document-symbol" as Tag],
+  });
 }
 
 // #endregion Processing functions
 
-const inputStore = new JsonStoreEnhanced(logger.child({ jsonStore: "input"}));
+const inputStore = new JsonStoreEnhanced(logger.child({ jsonStore: "input" }));
 await inputStore.load(argv.input.path, () => noopTransformer);
 
 // Process the model and add all React components to the model
@@ -1293,5 +1316,5 @@ logger.debug(
 
 // Output the model
 
-console.log(`\n// LikeC4 DSL for ${argv.input.path}`)
+console.log(`\n// LikeC4 DSL for ${argv.input.path}`);
 console.log(modelIndexToDsl(model));

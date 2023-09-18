@@ -30,12 +30,15 @@
   "dependencies": {
     "@likec4/core": "^0.33.1",
     "@types/node": "^16.18.46",
+    "@types/xml2js": "^0.4.12",
+    "fast-xml-parser": "^4.2.7",
     "inflection": "^2.0.1",
     "pino": "^8.15.1",
     "pino-pretty": "^10.2.0",
     "prettier": "^3.0.3",
     "ts-node": "^10.9.1",
     "vscode-languageserver": "~8.1.0",
+    "xml2js": "^0.6.2",
     "zx": "^7.2.3"
   },
   "devDependencies": {

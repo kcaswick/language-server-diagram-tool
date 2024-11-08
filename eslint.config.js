@@ -20,6 +20,12 @@ export default [
   ...compat.config(xo),
   ...compat.config(prettier.configs.recommended),
   {
+    ignores: [
+      "lsif/__tests__/data/bb_tests/repo/**", // Exclude external code used for test data from linting
+      "lsif/lsif-server-modules/**", // Exclude modules copied from vscode-lsif-extension from linting
+    ],
+  },
+  {
     languageOptions: {
       globals: {
         node: true,

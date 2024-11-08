@@ -40,7 +40,7 @@ export class JsonStoreEnhanced extends JsonStore {
   }
 
   private logger;
- 
+
   protected get outEnhanced() {
     return this["out"] as Out;
   }
@@ -52,10 +52,15 @@ export class JsonStoreEnhanced extends JsonStore {
     property?: ItemEdgeProperties | undefined,
   ) => void;
 
-  constructor(logger: pino.Logger<pino.LoggerOptions & {
-    customLevels: {
-        debugJsonStore: number;
-    };}>) {
+  constructor(
+    logger: pino.Logger<
+      pino.LoggerOptions & {
+        customLevels: {
+          debugJsonStore: number;
+        };
+      }
+    >,
+  ) {
     super();
 
     this.logger = logger;
@@ -229,7 +234,7 @@ export class JsonStoreEnhanced extends JsonStore {
         }
 
         const moniker = this["out"].moniker.get(nextResultSet.id);
-        // Disable debug output - 
+        // Disable debug output -
         this.logger.debugJsonStore("moniker", moniker);
         if (moniker !== undefined) {
           results.push(moniker);

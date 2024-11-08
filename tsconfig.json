@@ -16,14 +16,14 @@
 
     /* Linting */
     "strict": true,
-    "noUnusedLocals": false,  // Enforce as eslint warning instead
-    "noUnusedParameters": false,  // Enforce as eslint warning instead
+    "noUnusedLocals": false, // Enforce as eslint warning instead
+    "noUnusedParameters": false, // Enforce as eslint warning instead
     "noFallthroughCasesInSwitch": true
   },
   "include": ["."],
   "ts-node": {
     "compilerOptions": {
-      "moduleResolution": "Bundler",
+      "moduleResolution": "Bundler"
     },
     "esm": true,
     "experimentalSpecifierResolution": "node"

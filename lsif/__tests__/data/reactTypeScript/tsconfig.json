@@ -1,25 +1,24 @@
 {
-    "compilerOptions": {
-      "target": "ES2020",
-      "useDefineForClassFields": true,
-      "module": "CommonJS",
-      "lib": ["ES2020", "DOM", "DOM.Iterable"],
-      "skipLibCheck": true,
-      "esModuleInterop": true,
-      "jsx": "react",
-  
-      /* Bundler mode */
-      "moduleResolution": "Node",
-      "resolveJsonModule": true,
-      "isolatedModules": true,
-      "noEmit": true,
-  
-      /* Linting */
-      "strict": true,
-      "noUnusedLocals": false,  // Enforce as eslint warning instead
-      "noUnusedParameters": false,  // Enforce as eslint warning instead
-      "noFallthroughCasesInSwitch": true
-    },
-    "include": ["."]
-  }
-  
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "module": "CommonJS",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "jsx": "react",
+
+    /* Bundler mode */
+    "moduleResolution": "Node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": false, // Enforce as eslint warning instead
+    "noUnusedParameters": false, // Enforce as eslint warning instead
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["."]
+}

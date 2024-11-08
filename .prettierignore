@@ -1,1 +1,2 @@
 lsif/lsif-server-modules/
+lsif/__tests__/data/**/repo/**

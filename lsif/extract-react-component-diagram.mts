@@ -174,7 +174,25 @@ export const addElementsForScopes = (
   }
 };
 
-function buildPackageMap(store: JsonStoreEnhanced) {
+/**
+ * Builds a map of package roots based on the provided `JsonStoreEnhanced` instance.
+ * 
+ * This function retrieves all vertices with the label `packageInformation` from the store,
+ * and for each package, it attempts to find the package root using the associated monikers.
+ * 
+ * The function performs the following steps:
+ * 1. Retrieves all package information vertices from the store.
+ * 2. For each package, retrieves the associated monikers and sorts them by identifier length.
+ * 3. Attempts to update the package map using the monikers with the "npm" scheme.
+ * 4. Logs debug information about the success or failure of finding the package root.
+ * 5. If no package root is found and the moniker kind is not "import", it attempts to find
+ *    the package root from the containers associated with the moniker.
+ * 6. Updates the `packageRootMap` with the found package root.
+ * 7. Logs the final `packageRootMap` with the base and root paths.
+ * 
+ * @param store - The `JsonStoreEnhanced` instance containing the package information and monikers.
+ */
+export function buildPackageMap(store: JsonStoreEnhanced) {
   const packages = store.getVerticesWithLabel(
     VertexLabels.packageInformation,
   ) as PackageInformation[];
@@ -244,7 +262,7 @@ function buildPackageMap(store: JsonStoreEnhanced) {
  * @param fallback The fallback element kind to use if the symbol kind is not recognized.
  * @returns An object containing the default element kind and technology.
  */
-function getElementDefaultsForSymbolKind(kind: SymbolKind, fallback: ElementKind) {
+export function getElementDefaultsForSymbolKind(kind: SymbolKind, fallback: ElementKind) {
   const kindName = getSymbolKindName(kind);
   return {
     kind: symbolKindAsElementKind(kind) ?? fallback,
@@ -991,7 +1009,20 @@ function processTypeDefinitionReferences(range: Range, tags: [Tag, ...Tag[]]) {
   });
 }
 
-function processDefinitionRange(
+/**
+ * Processes a definition range and updates the model with the relevant information.
+ *
+ * @param definitionRange - The range of the definition to process.
+ * @param options - An object containing the kind, tags, and technology of the element.
+ * @param options.kind - The kind of the element.
+ * @param options.tags - An array of tags associated with the element.
+ * @param options.technology - The technology associated with the element.
+ * @param defaultOptions - An object containing the default description.
+ * @param defaultOptions.defaultDescription - The default description to use if no hover text is available.
+ * @returns A boolean indicating whether the definition range was successfully processed.
+ * @throws Will throw an error if a tsc moniker is not found for the given definition range.
+ */
+export function processDefinitionRange(
   definitionRange: DefinitionRange,
   {
     kind,
@@ -1101,7 +1132,7 @@ function processDefinitionRange(
  * @param symbol - The document symbol to process.
  * @returns void
  */
-function processDocumentSymbol(docInfo: DocumentInfo, symbol: DocumentSymbol): void {
+export function processDocumentSymbol(docInfo: DocumentInfo, symbol: DocumentSymbol): void {
   const symbolLink = locationToLink({ uri: docInfo.uri, range: symbol.range });
   logger.debug("document symbol", symbol, symbolLink);
   const definitionRanges = inputStore.findFullRangesFromPosition(docInfo.uri, symbol.range.start);

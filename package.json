@@ -2,6 +2,9 @@
   "name": "language-server-diagram-tool",
   "version": "0.0.1-placeholder",
   "description": "A tool to export diagrams of programs, read via language servers or LSIF (language server index format)",
+  "engines": {
+    "node": ">=16.0.0"
+  },
   "workspaces": [
     "lsif",
     "lsp"
@@ -52,7 +55,11 @@
     "husky": "^8.0.3",
     "lint-staged": "^14.0.1",
     "shx": "^0.3.4",
-    "ts-toolbelt": "^9.6.0"
+    "ts-toolbelt": "^9.6.0",
+    "vitest": "^0.34.6"
+  },
+  "overrides": {
+    "vite": "^4.5.3"
   },
   "prettier": {
     "endOfLine": "auto",
